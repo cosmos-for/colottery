@@ -1,4 +1,10 @@
-use cosmwasm_schema::{cw_serde, QueryResponses};
+pub mod exec;
+pub mod query;
+
+pub use exec::*;
+pub use query::*;
+
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Decimal, Uint128};
 use cw_utils::Duration;
 
@@ -18,10 +24,3 @@ pub struct InstantiateMsg {
     pub commission: Decimal,
     pub min_withdrawal: Uint128,
 }
-
-#[cw_serde]
-pub enum ExecuteMsg {}
-
-#[cw_serde]
-#[derive(QueryResponses)]
-pub enum QueryMsg {}
