@@ -5,7 +5,7 @@ resolver = "2"
 
 [workspace.dependencies]
 cosmwasm-schema = "1.2"
-cosmwasm-std = "1.2"
+cosmwasm-std =  { versoin = "1.2", features = ["staking"] }
 cosmwasm-storage = "1.2"
 cw-storage-plus = "1.0"
 cw-utils = "1.0"

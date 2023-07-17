@@ -11,7 +11,7 @@ use crate::{
     state::{CLAIMS, INVESTMENT, TOTAL_SUPPLY},
 };
 
-const FALLBACK_RATIO: Decimal = Decimal::one();
+use super::FALLBACK_RATIO;
 
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     use QueryMsg::*;

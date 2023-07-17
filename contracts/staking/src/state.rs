@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw_controllers::Claims;
@@ -32,8 +30,8 @@ pub struct Supply {
     pub issued: Uint128,
     /// `bonded` is how many native tokens are currently bonded to a validator
     pub bonded: Uint128,
-    /// `reserved` is how many token need to be reserved paying back
-    pub reserved: Uint128,
+    /// `claims` is how many token need to be reserved paying back who unbond
+    pub claims: Uint128,
 }
 
 /// Storage
