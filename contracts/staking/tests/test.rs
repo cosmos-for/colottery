@@ -246,6 +246,7 @@ fn rebonding_changes_pricing_should_works() {
     set_delegation(&mut deps.querier, 3000, NATIVE_DENOM);
 
     // now see 1000 issued(derivation token) and 3000 bonded(native token)
+
     let invest = query_investment(deps.as_ref()).unwrap();
     assert_eq!(invest.token_supply, Uint128::new(1000)); // token_supply (derivation token) is only about `Bond` operator, supply has nothing to do 'with set_delegation'
     assert_eq!(invest.staked_tokens, coin(3000, NATIVE_DENOM));
@@ -263,7 +264,7 @@ fn rebonding_changes_pricing_should_works() {
     // update the querier with new bond
     set_delegation(&mut deps.querier, 6000, NATIVE_DENOM);
 
-    // alice shoul gotten 1000 DRV for the 
+    // alice shoul gotten 1000 DRV for the
     assert_eq!(get_balance(deps.as_ref(), alice), Uint128::new(1000));
 
     let invest = query_investment(deps.as_ref()).unwrap();
