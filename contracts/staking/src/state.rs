@@ -30,7 +30,7 @@ pub struct Supply {
     pub issued: Uint128,
     /// `bonded` is how many native tokens are currently bonded to a validator
     pub bonded: Uint128,
-    /// `claims` is how many token need to be reserved paying back who unbond
+    /// `claims` is how many token need to be reserved paying back those who unbond,
     pub claims: Uint128,
 }
 

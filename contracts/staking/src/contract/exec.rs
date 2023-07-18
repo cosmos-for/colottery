@@ -88,9 +88,11 @@ pub fn bond(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, Cont
 
     // bonded is the total number of tokens we have delegated from this address
     let bonded = get_bounded(&deps.querier, &env.contract.address)?;
+    println!("Current bonded amount is: {} in bond function", bonded);
 
     // calculate to_mint and update total supply
     let mut supply = TOTAL_SUPPLY.load(deps.storage)?;
+    println!("Current supply amount is: {:?} in bond function", supply);
 
     assert_bonds(&supply, bonded)?;
 
@@ -103,16 +105,22 @@ pub fn bond(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, Cont
     supply.bonded = bonded + payment.amount;
     supply.issued += to_mint;
 
+    println!(
+        "After bounded, total supply is: {:?} in bond function",
+        supply
+    );
+
     TOTAL_SUPPLY.save(deps.storage, &supply)?;
 
-    let sub_info = MessageInfo {
+    let mint_info = MessageInfo {
         sender: env.contract.address.clone(),
         funds: vec![],
     };
 
-    execute_mint(deps, env, sub_info, info.sender.to_string(), to_mint)?;
+    // self mint the derivation token (denom is in the instantiate message) for sender (delegator)
+    execute_mint(deps, env, mint_info, info.sender.to_string(), to_mint)?;
 
-    // bond them to the validator
+    // delegate them to the validator
     let resp = Response::new()
         .add_message(StakingMsg::Delegate {
             validator: invest.validator,
@@ -276,25 +284,43 @@ pub fn bond_all_tokens(
 
     // find how many tokens to bond
     let invest = INVESTMENT.load(deps.storage)?;
+    println!("Current investment is: {:?}", invest);
+
     let mut balance = deps
         .querier
         .query_balance(&env.contract.address, &invest.bond_denom)?;
 
+    println!(
+        "Current bonded amount is: {} before bond all tokens",
+        balance
+    );
+
     // deduct pending claims from our account balance before reinvesting
     // if not enough funds, return a no-op
     match TOTAL_SUPPLY.update(deps.storage, |mut supply| -> StdResult<_> {
+        println!("Current supply is: {:?}", supply);
+
         balance.amount = balance.amount.checked_sub(supply.claims)?;
 
-        balance.amount.checked_sub(invest.min_withdrawal)?;
+        let min_withdrawal = invest.min_withdrawal;
+
+        println!("current min widthrawal is: {}", min_withdrawal);
+        println!("balance before sub min widthrawal is : {}", balance);
+
+        balance.amount.checked_sub(min_withdrawal)?; // why balance doesn't decrement?
 
         supply.bonded += balance.amount;
 
         Ok(supply)
     }) {
-        Ok(_) => {}
+        Ok(s) => {
+            println!("Current supply after updated is: {:?}", s);
+        }
         Err(StdError::Overflow { .. }) => return Ok(Response::new()),
         Err(e) => return Err(ContractError::Std(e)),
     }
+
+    println!("after calculate with supply, balance is: {:?}", balance);
 
     let resp = Response::new()
         .add_message(StakingMsg::Delegate {

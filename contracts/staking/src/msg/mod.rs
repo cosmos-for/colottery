@@ -11,6 +11,7 @@ use cw_utils::Duration;
 #[cw_serde]
 pub struct InstantiateMsg {
     pub name: String,
+    /// symbol / ticker of the derivative token
     pub symbol: String,
     /// Decimal place of the derivative token
     pub decimals: u8,
@@ -23,4 +24,26 @@ pub struct InstantiateMsg {
     /// commission for staking when someone unbonds
     pub commission: Decimal,
     pub min_withdrawal: Uint128,
+}
+
+impl InstantiateMsg {
+    pub fn new(
+        name: &str,
+        symbol: &str,
+        decimals: u8,
+        validator: &str,
+        unbonding_period: Duration,
+        commssion: u64,
+        min_withdrawal: u128,
+    ) -> Self {
+        Self {
+            name: name.to_string(),
+            symbol: symbol.to_string(),
+            decimals,
+            validator: validator.to_string(),
+            unbonding_period,
+            commission: Decimal::percent(commssion),
+            min_withdrawal: Uint128::from(min_withdrawal),
+        }
+    }
 }
