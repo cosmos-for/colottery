@@ -19,27 +19,33 @@ This is a game about Staking - Lottery, where anyone can stake any asset to earn
 
 ## Use Cases
 
-### Buy 投注 `Lottery`
+### Create Smart Wallet 创建智能合约钱包 (Smallet)
+
+用户可以创建智能合约钱包 `Smallet`，`Smallet` 是 `Lottery` 中的资产容器
+
+### Buy `Lottery` 投注
 
 用户在 `Lottery` 列表中选择对应的彩票进行购买, `Lottery` 截止时间后不能继续投注，投注成功后，获得当期 NFT
 
 ### Draw `Lottery` 开奖
 
-`LODAO` 在每期截止时间当天的22：00 开奖，选出获奖者
+`LoDAO` 在每期截止时间当天的22：00 开奖，选出获奖者
 
-### Claim 兑奖 `Lottery`
+### Claim `Lottery` 兑奖
 
-`Lottery` 开奖后，中奖者可以领取当期 `Lottery` 
+`Lottery` 开奖后，中奖者可以领取当期 `Lottery` ，领奖时，如果用户没有创建 智能合约钱包 `Smallet`，可提示用户创建，如果用户选择创建 `Smallet` ，可以把 `Lottery` 领取到 `Smallet`，否则领到到当前账户下。
 
-### `Lottery` 交易
+### Transfer `Lottery` 交易
 
 购买 `Lottery` 的凭证 NFT 可以交易，中奖后的 `Lottery` 也可以交易。
 
-### `Lottery` 查询
+### Query `Lottery` 查询
 
-可查询 `Lottery` (乐透)投注情况，包括总金额，参与人数，获奖者（如果开奖了）
+彩票列表：按DAY, MONTH, YEAR 分类，可过滤是否已开奖
 
-## architecture diagram
+可查询指定 `Lottery` (乐透)投注情况，包括总奖金，参与人(数)，获奖者（如果开奖了）
+
+## Architecture Diagram
 
 ![avatar](lottery-arch.svg)
 
