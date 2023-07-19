@@ -27,7 +27,9 @@ cw-multi-test = "0.16"
 codegen-units = 1
 incremental = false
 
-
+[profile.release.package.lottery]
+codegen-units = 1
+incremental = false
 
 [profile.release]
 rpath            = false
