@@ -183,6 +183,7 @@ pub fn unbound(
 
     // calculate how many native tokens worth and update supply
     let remainer = amount.checked_sub(commission).map_err(StdError::overflow)?;
+    println!("Current real claim amount is: {:?}", remainer);
 
     let mut supply = TOTAL_SUPPLY.load(deps.storage)?;
     println!(
@@ -193,6 +194,8 @@ pub fn unbound(
     assert_bonds(&supply, bonded)?;
 
     let unbond = remainer.multiply_ratio(bonded, supply.issued);
+    println!("Current real unbond amount is: {:?}", unbond);
+
     supply.bonded = bonded.checked_sub(unbond).map_err(StdError::overflow)?;
 
     supply.issued = supply

@@ -1,19 +1,18 @@
 use cosmwasm_std::{
     coin, coins,
     testing::{mock_dependencies, mock_env, mock_info, MockQuerier, MOCK_CONTRACT_ADDR},
-    Addr, Coin, CosmosMsg, Decimal, Deps, Env, FullDelegation, OverflowError, OverflowOperation,
-    StakingMsg, StdError, Uint128, Validator,
+    Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, Env, FullDelegation, OverflowError,
+    OverflowOperation, StakingMsg, StdError, Uint128, Validator,
 };
 
-use cw20_base::contract::{query_balance, query_token_info};
+use cw20_base::{
+    allowances::query_allowance,
+    contract::{query_balance, query_token_info},
+};
 use cw_controllers::Claim;
 use cw_utils::{Duration, DAY, HOUR, WEEK};
 use staking::{
-    contract::{
-        exec::{self, execute},
-        instantiate,
-        query::query_investment,
-    },
+    contract::{exec::execute, instantiate, query::query_investment},
     msg::{ExecuteMsg, InstantiateMsg},
     state::CLAIMS,
     ContractError,
@@ -404,4 +403,163 @@ fn unbonding_maintains_price_ratio_should_works() {
     assert_eq!(invest.token_supply, bob_balance + owner_cut);
     assert_eq!(invest.staked_tokens, coin(690, NATIVE_DENOM)); // 1500 - 810
     assert_eq!(invest.nominal_value, ratio);
+}
+
+#[test]
+fn claims_paid_out_should_works() {
+    let mut deps = mock_dependencies();
+    set_validator(&mut deps.querier);
+
+    let creator = "creator";
+    let init_msg = default_instantiate(10, 50);
+    let info = mock_info(creator, &[]);
+
+    instantiate(deps.as_mut(), mock_env(), info, init_msg).unwrap();
+
+    // let's bond some tokens now
+    let bob = "bob";
+    let bond_msg = ExecuteMsg::Bond {};
+    let info = mock_info(bob, &[coin(1000, NATIVE_DENOM)]);
+    execute(deps.as_mut(), mock_env(), info, bond_msg).unwrap();
+
+    set_delegation(&mut deps.querier, 1000, NATIVE_DENOM);
+
+    // unbond part of them
+    let unbond_msg = ExecuteMsg::Unbond {
+        amount: Uint128::new(600),
+    };
+
+    let env = mock_env();
+    let info = mock_info(bob, &[]);
+
+    execute(deps.as_mut(), env.clone(), info.clone(), unbond_msg).unwrap();
+
+    set_delegation(&mut deps.querier, 460, NATIVE_DENOM);
+
+    // ensure claims proper
+    let bob_claim = Uint128::new(540);
+    let original_claims = vec![Claim {
+        amount: bob_claim,
+        release_at: (DAY * 3).after(&env.block),
+    }];
+    assert_eq!(original_claims, get_claims(deps.as_ref(), bob));
+
+    // bob cannot exercise claims without enough balance
+    let claim_ready = later(&env, (DAY * 3 + HOUR).unwrap());
+    let too_soon = later(&env, DAY);
+    let fail = execute(
+        deps.as_mut(),
+        claim_ready.clone(),
+        info.clone(),
+        ExecuteMsg::Claim {},
+    );
+    assert!(fail.is_err(), "{:?}", fail);
+
+    // provide the balance, but claim not yet mature - also prohibited
+    deps.querier
+        .update_balance(MOCK_CONTRACT_ADDR, coins(540, NATIVE_DENOM));
+
+    let fail = execute(deps.as_mut(), too_soon, info.clone(), ExecuteMsg::Claim {});
+    assert!(fail.is_err(), "{:?}", fail);
+
+    // this should work with cash and claims ready
+    let res = execute(deps.as_mut(), claim_ready, info, ExecuteMsg::Claim {}).unwrap();
+    assert_eq!(1, res.messages.len());
+    let payout = &res.messages[0];
+
+    match &payout.msg {
+        CosmosMsg::Bank(BankMsg::Send { to_address, amount }) => {
+            assert_eq!(amount, &coins(540, NATIVE_DENOM));
+            assert_eq!(to_address, &bob);
+        }
+        _ => panic!("Unexpected message: {:?}", payout),
+    }
+
+    // claims have been removed
+    assert_eq!(get_claims(deps.as_ref(), bob), vec![]);
+}
+
+#[test]
+fn cw20_should_work() {
+    let mut deps = mock_dependencies();
+    set_validator(&mut deps.querier);
+
+    // set the actors... bob stakes, sends coins to carl, and gives allowance to alice
+    let bob = "bob";
+    let alice = "alice";
+    let carl = "carl";
+
+    // create the contract
+    let creator = "creator";
+    let instantiate_msg = default_instantiate(2, 50);
+    let info = mock_info(creator, &[]);
+    instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
+
+    // bond some tokens to create a balance
+    let info = mock_info(bob, &[coin(10, "random"), coin(1000, NATIVE_DENOM)]);
+    execute(deps.as_mut(), mock_env(), info, ExecuteMsg::Bond {}).unwrap();
+
+    // bob got 1000 DRV for 1000 stake at a 1.0 ratio
+    assert_eq!(get_balance(deps.as_ref(), bob), Uint128::new(1000));
+
+    // send coins to carl
+    let bob_info = mock_info(bob, &[]);
+    let transfer = ExecuteMsg::Transfer {
+        recipient: carl.into(),
+        amount: Uint128::new(200),
+    };
+    execute(deps.as_mut(), mock_env(), bob_info.clone(), transfer).unwrap();
+    assert_eq!(get_balance(deps.as_ref(), bob), Uint128::new(800));
+    assert_eq!(get_balance(deps.as_ref(), carl), Uint128::new(200));
+
+    // allow alice
+    let allow = ExecuteMsg::IncreaseAllowance {
+        spender: alice.into(),
+        amount: Uint128::new(350),
+        expires: None,
+    };
+    execute(deps.as_mut(), mock_env(), bob_info.clone(), allow).unwrap();
+
+    assert_eq!(get_balance(deps.as_ref(), bob), Uint128::new(800));
+    assert_eq!(get_balance(deps.as_ref(), alice), Uint128::zero());
+    assert_eq!(
+        query_allowance(deps.as_ref(), bob.into(), alice.into())
+            .unwrap()
+            .allowance,
+        Uint128::new(350)
+    );
+
+    // alice takes some for herself
+    let self_pay = ExecuteMsg::TransferFrom {
+        owner: bob.into(),
+        recipient: alice.into(),
+        amount: Uint128::new(250),
+    };
+    let alice_info = mock_info(alice, &[]);
+    execute(deps.as_mut(), mock_env(), alice_info, self_pay).unwrap();
+
+    assert_eq!(get_balance(deps.as_ref(), bob), Uint128::new(550));
+    assert_eq!(get_balance(deps.as_ref(), alice), Uint128::new(250));
+    assert_eq!(
+        query_allowance(deps.as_ref(), bob.into(), alice.into())
+            .unwrap()
+            .allowance,
+        Uint128::new(100)
+    );
+
+    // burn some, but not too much
+    let burn_too_much = ExecuteMsg::Burn {
+        amount: Uint128::new(1000),
+    };
+
+    let failed = execute(deps.as_mut(), mock_env(), bob_info.clone(), burn_too_much);
+    assert!(failed.is_err());
+    assert_eq!(get_balance(deps.as_ref(), bob), Uint128::new(550));
+
+    let burn = ExecuteMsg::Burn {
+        amount: Uint128::new(130),
+    };
+    execute(deps.as_mut(), mock_env(), bob_info, burn).unwrap();
+
+    assert_eq!(get_balance(deps.as_ref(), bob), Uint128::new(420));
 }
