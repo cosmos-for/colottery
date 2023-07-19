@@ -140,6 +140,8 @@ pub fn unbound(
     info: MessageInfo,
     amount: Uint128,
 ) -> Result<Response, ContractError> {
+    println!("Entering unbonding function ...");
+
     let invest = INVESTMENT.load(deps.storage)?;
 
     if amount < invest.min_withdrawal {
@@ -174,21 +176,38 @@ pub fn unbound(
     // re-calculate bonded to ensure real values
     // bonded is the total number of tokens delegated from this address
     let bonded = get_bounded(&deps.querier, &env.contract.address)?;
+    println!(
+        "Current bonded of native tokens is: {:?} in unbond function",
+        bonded
+    );
 
     // calculate how many native tokens worth and update supply
-    let remainer = amount.checked_add(commission).map_err(StdError::overflow)?;
+    let remainer = amount.checked_sub(commission).map_err(StdError::overflow)?;
+
     let mut supply = TOTAL_SUPPLY.load(deps.storage)?;
+    println!(
+        "Current total supply of derivation tokens is: {:?} before unbond in unbond function",
+        supply
+    );
 
     assert_bonds(&supply, bonded)?;
+
     let unbond = remainer.multiply_ratio(bonded, supply.issued);
     supply.bonded = bonded.checked_sub(unbond).map_err(StdError::overflow)?;
+
     supply.issued = supply
         .issued
-        .checked_add(remainer)
+        .checked_sub(remainer)
         .map_err(StdError::overflow)?;
+
     supply.claims += unbond;
 
     TOTAL_SUPPLY.save(deps.storage, &supply)?;
+
+    println!(
+        "Current total supply of derivation tokens is: {:?} after unbond in unbond function",
+        supply
+    );
 
     CLAIMS.create_claim(
         deps.storage,
@@ -291,7 +310,7 @@ pub fn bond_all_tokens(
         .query_balance(&env.contract.address, &invest.bond_denom)?;
 
     println!(
-        "Current bonded amount is: {} before bond all tokens",
+        "Current bonded of contract amount is: {} before bond all tokens",
         balance
     );
 
@@ -305,7 +324,10 @@ pub fn bond_all_tokens(
         let min_withdrawal = invest.min_withdrawal;
 
         println!("current min widthrawal is: {}", min_withdrawal);
-        println!("balance before sub min widthrawal is : {}", balance);
+        println!(
+            "balance of contract before sub min widthrawal is : {}",
+            balance
+        );
 
         balance.amount.checked_sub(min_withdrawal)?; // why balance doesn't decrement?
 
@@ -314,7 +336,10 @@ pub fn bond_all_tokens(
         Ok(supply)
     }) {
         Ok(s) => {
-            println!("Current supply after updated is: {:?}", s);
+            println!(
+                "Current total supply of derivation tokens after updated is: {:?}",
+                s
+            );
         }
         Err(StdError::Overflow { .. }) => return Ok(Response::new()),
         Err(e) => return Err(ContractError::Std(e)),

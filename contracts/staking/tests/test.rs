@@ -1,14 +1,19 @@
 use cosmwasm_std::{
     coin, coins,
     testing::{mock_dependencies, mock_env, mock_info, MockQuerier, MOCK_CONTRACT_ADDR},
-    Addr, Coin, CosmosMsg, Decimal, Deps, Env, FullDelegation, StakingMsg, Uint128, Validator,
+    Addr, Coin, CosmosMsg, Decimal, Deps, Env, FullDelegation, OverflowError, OverflowOperation,
+    StakingMsg, StdError, Uint128, Validator,
 };
 
 use cw20_base::contract::{query_balance, query_token_info};
 use cw_controllers::Claim;
 use cw_utils::{Duration, DAY, HOUR, WEEK};
 use staking::{
-    contract::{exec::execute, instantiate, query::query_investment},
+    contract::{
+        exec::{self, execute},
+        instantiate,
+        query::query_investment,
+    },
     msg::{ExecuteMsg, InstantiateMsg},
     state::CLAIMS,
     ContractError,
@@ -270,5 +275,133 @@ fn rebonding_changes_pricing_should_works() {
     let invest = query_investment(deps.as_ref()).unwrap();
     assert_eq!(invest.token_supply, Uint128::new(2000));
     assert_eq!(invest.staked_tokens, coin(6000, NATIVE_DENOM));
+    assert_eq!(invest.nominal_value, ratio);
+}
+
+#[test]
+fn bonding_wrong_denom_should_fails() {
+    let mut deps = mock_dependencies();
+    set_validator(&mut deps.querier);
+
+    let creator = "creator";
+    let init_msg = default_instantiate(2, 50);
+    let info = mock_info(creator, &[]);
+
+    instantiate(deps.as_mut(), mock_env(), info, init_msg).unwrap();
+
+    // let's bond some tokens now
+    let bob = "bob";
+    let bond_msg = ExecuteMsg::Bond {};
+    let info = mock_info(bob, &[coin(500, "ustake1")]);
+
+    // try to bond and make sure we trigger delegation
+    let err = execute(deps.as_mut(), mock_env(), info, bond_msg).unwrap_err();
+    assert_eq!(
+        err,
+        ContractError::EmptyBalance {
+            denom: "ustake".to_string()
+        }
+    );
+}
+
+#[test]
+fn unbonding_maintains_price_ratio_should_works() {
+    let mut deps = mock_dependencies();
+    set_validator(&mut deps.querier);
+
+    let creator = "creator";
+    let init_msg = default_instantiate(10, 50);
+    let info = mock_info(creator, &[]);
+
+    instantiate(deps.as_mut(), mock_env(), info, init_msg).unwrap();
+
+    // let's bond some tokens now
+    let bob = "bob";
+    let bond_msg = ExecuteMsg::Bond {};
+    let info = mock_info(bob, &[coin(1000, NATIVE_DENOM)]);
+    execute(deps.as_mut(), mock_env(), info, bond_msg).unwrap();
+
+    set_delegation(&mut deps.querier, 1000, NATIVE_DENOM);
+
+    let rebond_msg = ExecuteMsg::BondAllTokens {};
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+
+    deps.querier
+        .update_balance(MOCK_CONTRACT_ADDR, coins(500, NATIVE_DENOM));
+
+    execute(deps.as_mut(), mock_env(), info, rebond_msg).unwrap();
+
+    set_delegation(&mut deps.querier, 1500, NATIVE_DENOM);
+
+    deps.querier
+        .update_balance(MOCK_CONTRACT_ADDR, coins(0, NATIVE_DENOM));
+
+    let contract_balance = query_balance(deps.as_ref(), MOCK_CONTRACT_ADDR.to_string()).unwrap();
+    println!(
+        "The contract balance is: {:?} in test functoin",
+        contract_balance
+    );
+
+    // now creator tries to unbound these tokens - this must fail
+    let unbond_msg = ExecuteMsg::Unbond {
+        amount: Uint128::new(600),
+    };
+    let info = mock_info(creator, &[]);
+    let err = execute(deps.as_mut(), mock_env(), info, unbond_msg).unwrap_err();
+
+    assert_eq!(
+        err,
+        ContractError::Std(StdError::overflow(OverflowError::new(
+            OverflowOperation::Sub,
+            0,
+            600
+        )))
+    );
+
+    let unbond_msg = ExecuteMsg::Unbond {
+        amount: Uint128::new(600),
+    };
+    let owner_cut = Uint128::new(60);
+    let bob_claim = Uint128::new(810);
+    let bob_balance = Uint128::new(400);
+    let env = mock_env();
+    let info = mock_info(bob, &[]);
+
+    let resp = execute(deps.as_mut(), env.clone(), info, unbond_msg).unwrap();
+    assert_eq!(1, resp.messages.len());
+
+    let delegate = &resp.messages[0];
+
+    match &delegate.msg {
+        CosmosMsg::Staking(StakingMsg::Undelegate { validator, amount }) => {
+            println!("Should undelegate native token: {:?}", amount);
+
+            assert_eq!(validator.as_str(), DEFAULT_VALIDATOR);
+            assert_eq!(amount, &coin(bob_claim.u128(), NATIVE_DENOM));
+        }
+        _ => panic!("Unexpected message: {:?}", delegate),
+    }
+
+    set_delegation(&mut deps.querier, 690, NATIVE_DENOM);
+
+    // check balances
+    assert_eq!(get_balance(deps.as_ref(), bob), bob_balance);
+    assert_eq!(get_balance(deps.as_ref(), creator), owner_cut);
+
+    // proper claims
+    let expected_claims = vec![Claim {
+        amount: bob_claim,
+        release_at: (DAY * 3).after(&env.block),
+    }];
+
+    assert_eq!(expected_claims, get_claims(deps.as_ref(), bob));
+
+    // supplies updated, ratio is the same 1.5
+    let ratio = Decimal::from_str("1.5").unwrap();
+
+    let invest = query_investment(deps.as_ref()).unwrap();
+
+    assert_eq!(invest.token_supply, bob_balance + owner_cut);
+    assert_eq!(invest.staked_tokens, coin(690, NATIVE_DENOM)); // 1500 - 810
     assert_eq!(invest.nominal_value, ratio);
 }
