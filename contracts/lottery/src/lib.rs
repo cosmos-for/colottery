@@ -9,7 +9,7 @@ use state::Metadata;
 
 pub use crate::error::ContractError;
 
-pub type Extension = Option<Metadata>;
+pub type Extension = Metadata;
 
 pub type Cw721MetadataContract<'a> = cw721_base::Cw721Contract<'a, Extension, Empty, Empty, Empty>;
 pub type ExecuteMsg = cw721_base::ExecuteMsg<Extension, Empty>;

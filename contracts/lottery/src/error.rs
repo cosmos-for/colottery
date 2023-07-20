@@ -15,6 +15,9 @@ pub enum ContractError {
     #[error("{value} is not a valid unit price")]
     InvalidUnitPrice { value: Uint128 },
 
+    #[error("Operation not implemented")]
+    UnimplementedErr {},
+
     #[error("{validator} is not in validator set")]
     NoInValidatorSet { validator: String },
 
@@ -54,6 +57,19 @@ pub enum ContractError {
 
     #[error("Duplicate initial balance addresses")]
     DuplicateInitialBalanceAddresses {},
+
+    // for 721
+    #[error("token_id already claimed")]
+    AlreadyClaimed {},
+
+    #[error("Expired")]
+    AlreadyExpired {},
+
+    #[error("NotFound")]
+    NotFound {},
+
+    #[error("Approval not found for: {spender}")]
+    ApprovalNotFound { spender: String },
 }
 
 impl From<cw20_base::ContractError> for ContractError {
@@ -73,6 +89,22 @@ impl From<cw20_base::ContractError> for ContractError {
                 ContractError::DuplicateInitialBalanceAddresses {}
             }
             _ => ContractError::Std(StdError::generic_err(err.to_string())),
+        }
+    }
+}
+
+impl TryFrom<cw721_base::ContractError> for ContractError {
+    type Error = ContractError;
+
+    fn try_from(err: cw721_base::ContractError) -> Result<Self, Self::Error> {
+        use cw721_base::ContractError::*;
+
+        match err {
+            // Unauthorized {} => Ok(ContractError::UnauthorizedErr {}),
+            Claimed {} => Ok(ContractError::AlreadyClaimed {}),
+            Expired {} => Ok(ContractError::AlreadyExpired {}),
+            ApprovalNotFound { spender } => Ok(ContractError::ApprovalNotFound { spender }),
+            _ => Err(ContractError::UnimplementedErr {}),
         }
     }
 }

@@ -9,7 +9,6 @@ use crate::{
 };
 
 use super::{CONTRACT_NAME, CONTRACT_VERSION};
-// use cw2::set_contract_version;
 
 pub fn instantiate(
     mut deps: DepsMut,
@@ -27,17 +26,17 @@ pub fn instantiate(
 
     let created_at = env.block.time;
     let period: LotteryPeriod = msg.period.parse()?;
-    let deadline = created_at.plus_hours(1);
+    let expiration = period.get_deadline(created_at);
 
     let config = Config {
         name: msg.name.clone(),
         symbol: msg.symobl.clone(),
         created_at,
-        deadline,
+        expiratoin: expiration,
         unit_price: msg.unit_price,
         period,
         winner: None,
-        extension: None,
+        extension: Default::default(),
     };
 
     CONIFG.save(deps.storage, &config)?;
