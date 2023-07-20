@@ -18,6 +18,7 @@ thiserror = { workspace = true }
 anyhow = { workspace = true, optional = true }
 cw-multi-test = { workspace = true, optional = true }
 
+chrono = { workspace = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }

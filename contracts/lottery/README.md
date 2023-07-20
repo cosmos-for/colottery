@@ -8,9 +8,9 @@ This is a game about Staking - Lottery, where anyone can stake any asset to earn
 
 2. Draw：定期开奖，例如 22：00开奖（可通过Oracle，尽量自动，手动备选）
 
-3. Rewards：每期的购买资金就是奖金，当期资金的中的80%是本期奖励，10%拨入当月大奖的奖金池，10%拨入年度终极大奖奖金池
+3. Rewards：每期的购买资金就是奖金，当期资金的中的80%是本期奖励，10% 拨入当月大奖的奖金池，10% 拨入年度终极大奖奖金池
 
-4. Period：有 3 种周期的 `Lottery` ： 天 (DAY), 月 (MONTH), 年 (YEAR)。
+4. Period：有 3 种周期的 `Lottery` ： 天 (DAY), 月 (MONTH), 年 (YEAR)，如果需要可以增加 HOUR (小时), WEEK (周)。
    
 5. Qualification: 资格
     - DAY Lottery：所有人都能参加
@@ -29,7 +29,7 @@ This is a game about Staking - Lottery, where anyone can stake any asset to earn
 
 ### Draw `Lottery` 开奖
 
-`LoDAO` 在每期截止时间当天的22：00 开奖，选出获奖者
+`LoDAO` 在每期截止时间当天的22：00 开奖，随机从购买者中选出获奖者
 
 ### Claim `Lottery` 兑奖
 

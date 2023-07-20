@@ -10,7 +10,7 @@ use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 // version info for migration info
-const CONTRACT_NAME: &str = "crates.io:colottery";
+const CONTRACT_NAME: &str = "crates.io:colottery-staking";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const FALLBACK_RATIO: Decimal = Decimal::one();

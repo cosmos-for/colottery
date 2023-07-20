@@ -9,6 +9,12 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized {},
 
+    #[error("{value} is not a valid lottery period format")]
+    InvalidLottoryPeriod { value: String },
+
+    #[error("{value} is not a valid unit price")]
+    InvalidUnitPrice { value: Uint128 },
+
     #[error("{validator} is not in validator set")]
     NoInValidatorSet { validator: String },
 
