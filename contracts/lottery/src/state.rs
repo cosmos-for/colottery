@@ -5,7 +5,7 @@ use common::helper::{
 };
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Timestamp, Uint128};
-use cw_storage_plus::Item;
+use cw_storage_plus::{Item, Map};
 
 use crate::{ContractError, Extension};
 
@@ -117,9 +117,16 @@ pub struct Metadata {
     pub youtube_url: Option<String>,
 }
 
+#[cw_serde]
+pub struct BetInfo {
+    pub buy_at: u64,
+    pub memo: Option<String>,
+}
+
 /// Storage
 pub const OWNER: Item<Addr> = Item::new("owner");
 pub const CONIFG: Item<Config> = Item::new("config");
+pub const BETTORS: Map<&Addr, BetInfo> = Map::new("bettors");
 
 // pub const CLAIMS: Claims = Claims::new("claims");
 

@@ -5,8 +5,16 @@ use cw_utils::Expiration;
 
 use crate::{state::Metadata, ContractError, Extension};
 
+#[allow(clippy::large_enum_variant)]
 #[cw_serde]
 pub enum ExecuteMsg {
+    CreateLottery {
+        lottery_code_id: u64,
+        title: String,
+    },
+    DrawLottery {
+        lottery: String,
+    },
     TransferNft {
         recipient: String,
         token_id: String,
