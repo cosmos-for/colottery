@@ -4,15 +4,22 @@ use cosmwasm_std::{Addr, Coin};
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    #[returns(LotteriesCountResp)]
-    LotteriesCount {},
-    #[returns(LatestLotteryResp)]
-    LatestLottery {},
+    #[returns(BettorCountResp)]
+    BettorCount {},
+    #[returns(PrizeAmountResp)]
+    PrizeAmount {},
+    #[returns(WinnerResp)]
+    Winner {},
 }
 
 #[cw_serde]
-pub struct LotteriesCountResp {
+pub struct BettorCountResp {
     pub counter: u64,
+}
+
+#[cw_serde]
+pub struct PrizeAmountResp {
+    pub amount: Coin,
 }
 
 #[cw_serde]
@@ -21,12 +28,6 @@ pub struct InstantiationData {
 }
 
 #[cw_serde]
-pub struct LatestLotteryResp {
-    pub lottery: Option<Addr>,
-}
-
-#[cw_serde]
-pub struct LotteryRewards {
-    pub lottery: String,
-    pub funds: Vec<Coin>,
+pub struct WinnerResp {
+    pub winner: Option<Addr>,
 }

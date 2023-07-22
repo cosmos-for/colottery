@@ -13,5 +13,4 @@ pub struct InstantiateMsg {
     pub symobl: String,
     pub unit_price: Uint128,
     pub period: String,
-    // pub deadline: String,
 }

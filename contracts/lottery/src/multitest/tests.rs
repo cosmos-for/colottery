@@ -11,15 +11,15 @@ mod test {
 
     #[test]
     fn instantiate_should_works() {
-        // let mut app = App::default();
-        // let code_id = LotteryCodeId::store_code(&mut app);
-        // let title = "lottery title";
-        // let contract = code_id
-        //     .instantiate(&mut app, owner(), title, "lottery test")
-        //     .unwrap();
+        let mut app = App::default();
+        let code_id = LotteryCodeId::store_code(&mut app);
+        let title = "lottery title";
+        let contract = code_id
+            .instantiate(&mut app, owner(), title, "lottery test")
+            .unwrap();
 
-        // let winner = contract.winner(&app).unwrap();
-        // assert_eq!(winner.winner, None);
+        let winner = contract.winner(&app).unwrap();
+        assert_eq!(winner.winner, None);
 
         // let contract_owner = contract.owner(&app).unwrap();
         // assert_eq!(contract_owner.owner, owner());

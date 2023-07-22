@@ -28,7 +28,8 @@ impl LotteryCodeId {
         title: &str,
         label: &str,
     ) -> AnyResult<LotteryContract> {
-        LotteryContract::instantiate(app, self, sender, title, label)
+        // LotteryContract::instantiate(app, self, sender, title, label)
+        todo!()
     }
 }
 
@@ -52,7 +53,8 @@ impl LotteryContract {
         app: &mut App,
         code_id: LotteryCodeId,
         sender: Addr,
-        title: &str,
+        name: &str,
+        symbol: &str,
         label: &str,
     ) -> AnyResult<Self> {
         // app.instantiate_contract(
@@ -113,10 +115,11 @@ impl LotteryContract {
     //     )
     // }
 
-    // pub fn winner(&self, app: &App) -> StdResult<WinnerResp> {
-    //     app.wrap()
-    //         .query_wasm_smart(self.addr(), &QueryMsg::Winner {})
-    // }
+    pub fn winner(&self, app: &App) -> StdResult<WinnerResp> {
+        todo!()
+        // app.wrap()
+        //     .query_wasm_smart(self.addr(), &QueryMsg::Winner {})
+    }
 
     // pub fn bettor_count(&self, app: &App, bettor: &str) -> StdResult<QueryBettorResp> {
     //     app.wrap().query_wasm_smart(
