@@ -4,21 +4,43 @@ use common::helper::{
     get_last_day_month, get_last_day_week, get_last_day_year, get_secs_of_hour_22, timestamp_to_utc,
 };
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Timestamp, Uint128};
+use cosmwasm_std::{Addr, Coin, Timestamp, Uint128};
 use cw_storage_plus::{Item, Map};
 
 use crate::{ContractError, Extension};
 
 #[cw_serde]
-pub struct Config {
+pub struct State {
     pub name: String,
     pub symbol: String,
     pub created_at: Timestamp,
     pub expiratoin: Timestamp,
     pub unit_price: Uint128,
     pub period: LotteryPeriod,
-    pub winner: Option<String>,
+    pub selection: WinnerSelection,
+    pub player_count: u32,
+    pub max_players: u32,
+    pub status: GameStatus,
+    pub winner: Vec<WinnerInfo>,
     pub extension: Extension,
+}
+
+#[cw_serde]
+pub enum WinnerSelection {
+    // Only a player win all prize
+    OnlyOne {},
+    // Ex: [60, 30, 10] means 60% to 1st place, 30% to 2nd, 10% to 3rd
+    Fixed {
+        pct_split: Vec<u8>,
+        winner_count: u32,
+        max_winner_count: Option<u32>,
+    },
+}
+
+#[cw_serde]
+pub enum GameStatus {
+    Activing,
+    Ended,
 }
 
 #[cw_serde]
@@ -118,15 +140,23 @@ pub struct Metadata {
 }
 
 #[cw_serde]
-pub struct BetInfo {
+pub struct PlayerInfo {
+    pub address: Addr,
     pub buy_at: u64,
+    pub height: u64,
     pub memo: Option<String>,
+}
+
+#[cw_serde]
+pub struct WinnerInfo {
+    pub address: Addr,
+    pub prize: Coin,
 }
 
 /// Storage
 pub const OWNER: Item<Addr> = Item::new("owner");
-pub const CONIFG: Item<Config> = Item::new("config");
-pub const BETTORS: Map<&Addr, BetInfo> = Map::new("bettors");
+pub const STATE: Item<State> = Item::new("state");
+pub const PLAYERS: Map<&Addr, PlayerInfo> = Map::new("players");
 
 // pub const CLAIMS: Claims = Claims::new("claims");
 

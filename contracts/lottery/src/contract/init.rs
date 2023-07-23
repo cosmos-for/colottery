@@ -4,7 +4,7 @@ use cw721_base::InstantiateMsg as Cw721InstantiateMsg;
 
 use crate::{
     msg::InstantiateMsg,
-    state::{Config, LotteryPeriod, CONIFG, OWNER},
+    state::{GameStatus, LotteryPeriod, State, OWNER, STATE},
     ContractError, Cw721MetadataContract,
 };
 
@@ -28,18 +28,22 @@ pub fn instantiate(
     let period: LotteryPeriod = msg.period.parse()?;
     let expiration = period.get_deadline(created_at);
 
-    let config = Config {
+    let config = State {
         name: msg.name.clone(),
         symbol: msg.symobl.clone(),
         created_at,
         expiratoin: expiration,
         unit_price: msg.unit_price,
         period,
-        winner: None,
+        selection: msg.selection,
+        player_count: 0,
+        max_players: msg.max_bettors,
+        status: GameStatus::Activing,
+        winner: vec![],
         extension: Default::default(),
     };
 
-    CONIFG.save(deps.storage, &config)?;
+    STATE.save(deps.storage, &config)?;
     OWNER.save(deps.storage, &info.sender)?;
 
     let init_msg = Cw721InstantiateMsg {

@@ -1,28 +1,42 @@
 #[cfg(test)]
 mod test {
-    use cosmwasm_std::coins;
     use cw_multi_test::App;
 
     use crate::{
-        multitest::{alice, owner, LotteryCodeId, LotteryContract},
-        state::BetInfo,
-        ContractError, NATIVE_DENOM,
+        multitest::{owner, LotteryCodeId},
+        state::WinnerSelection,
     };
 
     #[test]
     fn instantiate_should_works() {
         let mut app = App::default();
         let code_id = LotteryCodeId::store_code(&mut app);
-        let title = "lottery title";
+        let name = "LOTTERY";
+        let symbol = "LOTTER";
+        let unit_price = 100;
+        let period = "hour";
+        let selection = WinnerSelection::OnlyOne {};
+        let max_players = 3;
+        let label = "Lottery label";
         let contract = code_id
-            .instantiate(&mut app, owner(), title, "lottery test")
+            .instantiate(
+                &mut app,
+                owner(),
+                name,
+                symbol,
+                unit_price,
+                period,
+                selection,
+                max_players,
+                label,
+            )
             .unwrap();
 
         let winner = contract.winner(&app).unwrap();
-        assert_eq!(winner.winner, None);
+        assert_eq!(winner.winner, vec![]);
 
-        // let contract_owner = contract.owner(&app).unwrap();
-        // assert_eq!(contract_owner.owner, owner());
+        let contract_owner = contract.owner(&app).unwrap();
+        assert_eq!(contract_owner.owner, owner());
     }
 
     #[test]

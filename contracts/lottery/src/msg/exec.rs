@@ -1,9 +1,9 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Binary, Empty, Uint128};
+use cosmwasm_std::{Binary, Empty};
 use cw721_base::ExecuteMsg as Cw721ExecuteMsg;
 use cw_utils::Expiration;
 
-use crate::{state::Metadata, ContractError, Extension};
+use crate::{state::Metadata, ContractError};
 
 #[allow(clippy::large_enum_variant)]
 #[cw_serde]

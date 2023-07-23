@@ -1,49 +1,53 @@
-# Lotter Games (乐透)
+# Lotter Games
 
 This is a game about Staking - Lottery, where anyone can stake any asset to earn profits and, on top of that, have a chance of unexpected rewards, all while enjoying the fun. The most important thing is to have joy and happiness!
 
-## **Lottery (乐透)** 玩法：
+## Lottery  Gameplay：
 
-1. Buy：使用 对应链的 原生 token 购买，费用每期固定金额，面额价格可在初始化 `Lottery` 合约时设定，例如：10 ARCH, 20 ARCH, 50 ARCH, 100 ARCH，200 ARCH 等。
+1. Buy:
+   Purchase using the native token of the corresponding blockchain. The cost is a fixed amount for each round, and the denominations can be set during the initialization of the Lottery contract. For example: 10 ARCH, 20 ARCH, 50 ARCH, 100 ARCH, 200 ARCH, etc.
 
-2. Draw：定期开奖，例如 22：00开奖（可通过Oracle，尽量自动，手动备选）
+2. Draw:
+   Regular draws, for instance, at 22:00 (automated through Oracle if possible, manual as an alternative).
 
-3. Rewards：每期的购买资金就是奖金，当期资金的中的80%是本期奖励，10% 拨入当月大奖的奖金池，10% 拨入年度终极大奖奖金池
+3. Prize
+   The prize pool for each round is funded by the purchase amounts. 80% of the current round's funds will be used as rewards, 10% will be allocated to the monthly jackpot
 
-4. Period：有 3 种周期的 `Lottery` ： 天 (DAY), 月 (MONTH), 年 (YEAR)，如果需要可以增加 HOUR (小时), WEEK (周)。
+4. Period：
+   There are three types of Lottery periods: Day (DAY), Month (MONTH), and Year (YEAR). Additional periods like Hour (HOUR) and Week (WEEK) can be added if required.
    
-5. Qualification: 资格
-    - DAY Lottery：所有人都能参加
-    - MONTH Lottery：累计参加 15 次 DAY Lottery 的人可以参加
-    - YEAR Lottery：累计参加 10 次 MONTH 或 200 次 DAY 的人可以参加
+5.  Eligibility: 
+    - DAY Lottery: Open to all participants
+    - MONTH Lottery: Participants must have participated in 15 previous DAY Lotteries.
+    - YEAR Lottery: Participants must have participated in 10 previous MONTH Lotteries or 200 previous DAY Lotteries.
 
 ## Use Cases
 
-### Create Smart Wallet 创建智能合约钱包 (Smallet)
+### Create Smart Wallet (Smallet)
 
-用户可以创建智能合约钱包 `Smallet`，`Smallet` 是 `Lottery` 中的资产容器
+Users can create a smart contract wallet called "Smallet," which serves as a container for all their assets.
 
-### Buy `Lottery` 投注
+### Buy `Lottery` (Betting)
 
-用户在 `Lottery` 列表中选择对应的彩票进行购买, `Lottery` 截止时间后不能继续投注，投注成功后，获得当期 NFT
+Users can buy tickets for the corresponding lottery from the "Lottery" list. Once the deadline for a "Lottery" is reached, no further bets can be placed. Upon successful betting, users will receive an NFT for the current round.
 
-### Draw `Lottery` 开奖
+### Draw `Lottery` 
 
-`LoDAO` 在每期截止时间当天的22：00 开奖，随机从购买者中选出获奖者
+`LoDAO` will conduct the draw for each round at 22:00 on the day of the deadline. The winner will be randomly selected from the buyers
 
-### Claim `Lottery` 兑奖
+### Claim `Lottery` 
 
-`Lottery` 开奖后，中奖者可以领取当期 `Lottery` ，领奖时，如果用户没有创建 智能合约钱包 `Smallet`，可提示用户创建，如果用户选择创建 `Smallet` ，可以把 `Lottery` 领取到 `Smallet`，否则领到到当前账户下。
+After the `Lottery` draw, the winner can claim the prize for the current round. If the user hasn't created the smart contract wallet `Smallet`, they will be prompted to do so. If the user chooses to create `Smallet`, they can receive the "Lottery" into it; otherwise, it will be received in the current account.
 
-### Transfer `Lottery` 交易
+### Send `Lottery` 
 
-购买 `Lottery` 的凭证 NFT 可以交易，中奖后的 `Lottery` 也可以交易。
+The NFT voucher for purchasing `Lottery` and the winning `Lottery` can be traded.
 
-### Query `Lottery` 查询
+### Query `Lottery` 
 
-彩票列表：按DAY, MONTH, YEAR 分类，可过滤是否已开奖
+The `Lottery`` list is categorized as DAY, MONTH, and YEAR. It can be filtered to show whether the draw has been conducted.
 
-可查询指定 `Lottery` (乐透)投注情况，包括总奖金，参与人(数)，获奖者（如果开奖了）
+Users can query the betting situation for a specific `Lottery`,including the total prize amount, the number of participants, and the winner (if `Lottery` has already drawed).
 
 ## Architecture Diagram
 

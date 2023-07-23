@@ -1,7 +1,4 @@
-use cosmwasm_std::{
-    coin, to_binary, Addr, BankMsg, DepsMut, DistributionMsg, Empty, Env, MessageInfo,
-    QuerierWrapper, Response, StakingMsg, StdError, StdResult, Uint128, WasmMsg,
-};
+use cosmwasm_std::{DepsMut, Empty, Env, MessageInfo, Response};
 
 use cw721_base::Cw721Contract;
 
@@ -39,10 +36,10 @@ impl<'a> BaseExecute for Cw721BaseContract<'a> {
 }
 
 pub fn execute(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    msg: ExecuteMsg,
+    _deps: DepsMut,
+    _env: Env,
+    _info: MessageInfo,
+    _msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     // use ExecuteMsg::*;
 
