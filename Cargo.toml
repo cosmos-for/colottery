@@ -1,6 +1,6 @@
 
 [workspace]
-members = ["contracts/*", "crates/*"]
+members = ["contracts/*", "packages/*"]
 resolver = "2"
 
 [workspace.dependencies]
