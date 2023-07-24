@@ -11,7 +11,7 @@ This is a game about Staking - Lottery, where anyone can stake any asset to earn
    Regular draws, for instance, at 22:00 (automated through Oracle if possible, manual as an alternative).
 
 3. Prize
-   The prize pool for each round is funded by the purchase amounts. 80% of the current round's funds will be used as rewards, 10% will be allocated to the monthly jackpot
+   The prize pool for each round is funded by the purchase amounts. the jackpot wins the all funds of the lottery.
 
 4. Period：
    There are three types of Lottery periods: Day (DAY), Month (MONTH), and Year (YEAR). Additional periods like Hour (HOUR) and Week (WEEK) can be added if required.
