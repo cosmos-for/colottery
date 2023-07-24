@@ -13,7 +13,7 @@ pub enum ExecuteMsg {
         memo: Option<String>,
     },
     DrawLottery {
-        lottery: String,
+        // lottery: String,
     },
     Send {
         contract: String,

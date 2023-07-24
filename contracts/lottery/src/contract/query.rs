@@ -1,7 +1,7 @@
 use cosmwasm_std::{to_binary, Binary, Deps, Env, StdResult};
 
 use crate::{
-    msg::{CurrentStateResp, IsJoinedResp, OwnerResp, QueryMsg, WinnerResp},
+    msg::{CurrentStateResp, OwnerResp, PlayInfoResp, QueryMsg, WinnerResp},
     state::{OWNER, PLAYERS, STATE},
 };
 
@@ -11,7 +11,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Winner {} => winner(deps),
         QueryMsg::CurrentState {} => current_state(deps),
         QueryMsg::Balances {} => balances(deps, &env),
-        QueryMsg::IsJoined { address } => is_joined(deps, &address),
+        QueryMsg::PlayInfo { address } => play_info(deps, &address),
     }
 }
 
@@ -38,10 +38,8 @@ pub fn balances(deps: Deps, env: &Env) -> StdResult<Binary> {
         .and_then(|balances| to_binary(&balances))
 }
 
-pub fn is_joined(deps: Deps, address: &str) -> StdResult<Binary> {
+pub fn play_info(deps: Deps, address: &str) -> StdResult<Binary> {
     let address = deps.api.addr_validate(address)?;
     let player = PLAYERS.may_load(deps.storage, &address)?;
-    to_binary(&IsJoinedResp {
-        joined: player.is_some(),
-    })
+    to_binary(&PlayInfoResp { info: player })
 }

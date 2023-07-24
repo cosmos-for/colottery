@@ -28,14 +28,14 @@ pub struct State {
 
 impl State {
     pub fn is_closed(&self) -> bool {
-        self.status == GameStatus::Ended
+        self.status == GameStatus::Closed
     }
 }
 
 #[cw_serde]
 pub enum WinnerSelection {
     // Only a player win all prize
-    OnlyOne {},
+    Jackpot {},
     // Ex: [60, 30, 10] means 60% to 1st place, 30% to 2nd, 10% to 3rd
     Fixed {
         pct_split: Vec<u8>,
@@ -44,10 +44,15 @@ pub enum WinnerSelection {
     },
 }
 
+impl WinnerSelection {
+    pub fn is_jackpot(&self) -> bool {
+        matches!(self, Self::Jackpot {})
+    }
+}
 #[cw_serde]
 pub enum GameStatus {
     Activing,
-    Ended,
+    Closed,
 }
 
 #[cw_serde]
@@ -157,7 +162,7 @@ pub struct PlayerInfo {
 #[cw_serde]
 pub struct WinnerInfo {
     pub address: Addr,
-    pub prize: Coin,
+    pub prize: Vec<Coin>,
 }
 
 /// Storage

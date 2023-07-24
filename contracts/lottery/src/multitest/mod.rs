@@ -104,10 +104,19 @@ impl LotteryContract {
         &self,
         app: &mut App,
         sender: Addr,
+        denom: &str,
         memo: Option<String>,
         funds: &[Coin],
     ) -> AnyResult<AppResponse> {
-        app.execute_contract(sender, self.addr(), &ExecuteMsg::BuyTicket { memo }, funds)
+        app.execute_contract(
+            sender,
+            self.addr(),
+            &ExecuteMsg::BuyTicket {
+                denom: denom.into(),
+                memo,
+            },
+            funds,
+        )
     }
 
     // #[track_caller]
@@ -153,10 +162,10 @@ impl LotteryContract {
             .query_wasm_smart(self.addr(), &QueryMsg::CurrentState {})
     }
 
-    pub fn is_joined(&self, app: &App, address: &str) -> StdResult<IsJoinedResp> {
+    pub fn player_info(&self, app: &App, address: &str) -> StdResult<PlayInfoResp> {
         app.wrap().query_wasm_smart(
             self.addr(),
-            &QueryMsg::IsJoined {
+            &QueryMsg::PlayInfo {
                 address: address.into(),
             },
         )

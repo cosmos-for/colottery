@@ -1,11 +1,12 @@
 #[cfg(test)]
 mod test {
-    use cosmwasm_std::Uint128;
+    use cosmwasm_std::{coins, Uint128};
     use cw_multi_test::App;
 
     use crate::{
-        multitest::{owner, LotteryCodeId},
-        state::{GameStatus, WinnerSelection},
+        multitest::{alice, bob, owner, LotteryCodeId, LotteryContract},
+        state::{self, GameStatus, WinnerSelection},
+        ARCH_DEMON,
     };
 
     #[test]
@@ -16,7 +17,7 @@ mod test {
         let symbol = "LOTTER";
         let unit_price = 100;
         let period = "hour";
-        let selection = WinnerSelection::OnlyOne {};
+        let selection = WinnerSelection::Jackpot {};
         let max_players = 3;
         let label = "Lottery label";
         let contract = code_id
@@ -48,43 +49,86 @@ mod test {
         assert_eq!(state.max_players, 3);
         assert_eq!(state.status, GameStatus::Activing);
         assert_eq!(state.player_count, 0);
-        assert_eq!(state.selection, WinnerSelection::OnlyOne {});
+        assert_eq!(state.selection, WinnerSelection::Jackpot {});
 
         // check is joined
-        let is_joined = contract.is_joined(&app, owner().as_str()).unwrap();
-        assert!(!is_joined.joined);
+        let is_joined = contract.player_info(&app, owner().as_str()).unwrap();
+        assert!(is_joined.info.is_none());
     }
 
     #[test]
     fn buy_lottery_should_works() {
-        // let mut app = App::new(|router, _api, storage| {
-        //     router
-        //         .bank
-        //         .init_balance(storage, &alice(), coins(3000, NATIVE_DENOM))
-        //         .unwrap();
-        // });
+        let mut app = App::new(|router, _api, storage| {
+            router
+                .bank
+                .init_balance(storage, &alice(), coins(300, ARCH_DEMON))
+                .unwrap();
+            router
+                .bank
+                .init_balance(storage, &bob(), coins(500, ARCH_DEMON))
+                .unwrap();
+        });
 
-        // let code_id = LotteryCodeId::store_code(&mut app);
-        // let title = "lottery title";
-        // let contract = code_id
-        //     .instantiate(&mut app, owner(), title, "lottery test")
-        //     .unwrap();
+        let code_id = LotteryCodeId::store_code(&mut app);
+        let name = "LOTTERY";
+        let symbol = "LOTTER";
+        let unit_price = 100;
+        let period = "hour";
+        let selection = WinnerSelection::Jackpot {};
+        let max_players = 3;
+        let label = "Lottery label";
+        let contract = code_id
+            .instantiate(
+                &mut app,
+                owner(),
+                name,
+                symbol,
+                unit_price,
+                period,
+                selection,
+                max_players,
+                label,
+            )
+            .unwrap();
 
-        // contract
-        //     .buy(
-        //         &mut app,
-        //         alice(),
-        //         NATIVE_DENOM,
-        //         Some("恭喜发财!".to_string()),
-        //         &coins(100, NATIVE_DENOM),
-        //     )
-        //     .unwrap();
-        // let resp = contract.bettor_count(&app, alice().as_str()).unwrap();
-        // let expected = BetInfo {
-        //     buy_at: 12345,
-        //     memo: Some("恭喜发财!".to_string()),
-        // };
-        // assert_eq!(resp.info, Some(expected));
+        // Buy ticket
+        contract
+            .buy(
+                &mut app,
+                alice(),
+                ARCH_DEMON,
+                Some("恭喜发财!".to_string()),
+                &coins(100, ARCH_DEMON),
+            )
+            .unwrap();
+
+        contract
+            .buy(
+                &mut app,
+                bob(),
+                ARCH_DEMON,
+                Some("我要发达!".to_string()),
+                &coins(100, ARCH_DEMON),
+            )
+            .unwrap();
+
+        let balances = LotteryContract::query_balances(&app, contract.addr()).unwrap();
+        assert_eq!(balances, coins(200, ARCH_DEMON));
+
+        let balances = LotteryContract::query_balances(&app, alice()).unwrap();
+        assert_eq!(balances, coins(200, ARCH_DEMON));
+
+        let state = contract.query_state(&app).unwrap();
+        assert_eq!(state.state.player_count, 2);
+
+        let resp = contract
+            .player_info(&app, alice().as_str())
+            .unwrap()
+            .info
+            .unwrap();
+
+        assert_eq!(resp.address, alice());
+        assert_eq!(resp.memo, Some("恭喜发财!".to_string()));
     }
 
     #[test]

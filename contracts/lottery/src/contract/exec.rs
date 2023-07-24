@@ -1,11 +1,12 @@
-use cosmwasm_std::{DepsMut, Empty, Env, MessageInfo, Response};
+use cosmwasm_std::{Addr, DepsMut, Empty, Env, MessageInfo, Response, Storage};
 
 use cw721_base::Cw721Contract;
+use cw_storage_plus::Map;
 use cw_utils::must_pay;
 
 use crate::{
     msg::ExecuteMsg,
-    state::{PlayerInfo, PLAYERS, STATE},
+    state::{GameStatus, PlayerInfo, WinnerInfo, OWNER, PLAYERS, STATE},
     ContractError, Extension, ARCH_DEMON,
 };
 
@@ -50,11 +51,11 @@ pub fn execute(
 
     match msg {
         BuyTicket { denom, memo } => buy_ticket(deps, env, info, &denom, memo),
-        // Draw {} => exec::draw(deps, env, info, STATE, BETTORS),
+        DrawLottery {} => draw_lottery(deps, env, info),
         // WithdrawRewards { amount, denom } => {
-        //     exec::withdraw(deps, env, info, amount, denom.as_str(), STATE, WITHDRAWS)
+        //     withdraw(deps, env, info, amount, denom.as_str(), STATE, WITHDRAWS)
         // }
-        // Transfer { recipient } => exec::transfer(deps, env, info, recipient, STATE),
+        // Transfer { recipient } => transfer(deps, env, info, recipient, STATE),
         _ => unimplemented!(),
     }
 }
@@ -69,14 +70,14 @@ pub fn buy_ticket(
 ) -> Result<Response, ContractError> {
     // Check funds pay, only support ARCH first
     if denom != ARCH_DEMON {
-        return Err(ContractError::NotSupportDenom {
+        return Err(ContractError::UnSupportedDenom {
             denom: denom.into(),
         });
     }
 
     let amount = must_pay(&info, denom)?;
 
-    let state = STATE.load(deps.storage)?;
+    let mut state = STATE.load(deps.storage)?;
 
     if amount < state.unit_price {
         return Err(ContractError::PaymentNotEnough { amount });
@@ -112,6 +113,9 @@ pub fn buy_ticket(
             lottery: contract_addr,
         }),
         None => {
+            state.player_count += 1;
+            STATE.save(deps.storage, &state)?;
+
             PLAYERS.save(
                 deps.storage,
                 &sender,
@@ -125,6 +129,57 @@ pub fn buy_ticket(
             Ok(Response::new())
         }
     }
+}
+
+pub fn draw_lottery(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+    let sender = info.sender;
+
+    let mut state = STATE.load(deps.storage)?;
+
+    let owner = OWNER.load(deps.storage)?;
+
+    if owner != sender {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    if state.is_closed() {
+        return Err(ContractError::LotteryAlreadyClosed {
+            address: env.contract.address,
+        });
+    }
+
+    let current_height = env.block.height;
+    let lottery_height = state.height;
+
+    // Only can buy lottery after created block height
+    if lottery_height > current_height {
+        return Err(ContractError::LotteryHeightNotMatch {
+            current_height,
+            lottery_height,
+        });
+    }
+
+    let winner = choose_winner_infos(PLAYERS, deps.storage)?;
+
+    if winner.is_empty() {
+        state.winner = vec![];
+    } else {
+        let balances = deps
+            .querier
+            .query_balance(env.contract.address, ARCH_DEMON)?;
+        let winner_info = WinnerInfo {
+            address: winner.first().as_ref().unwrap().address.clone(),
+            prize: vec![balances],
+        };
+        state.winner.push(winner_info);
+    }
+
+    // Change status to `Closed`
+    state.status = GameStatus::Closed;
+
+    STATE.save(deps.storage, &state)?;
+
+    Ok(Response::new())
 }
 
 // pub fn transfer(
@@ -144,56 +199,6 @@ pub fn buy_ticket(
 //     let owner = deps.api.addr_validate(&recipient)?;
 
 //     state.owner = owner;
-
-//     state_item.save(deps.storage, &state)?;
-
-//     Ok(Response::new())
-// }
-
-// pub fn draw(
-//     deps: DepsMut,
-//     env: Env,
-//     info: MessageInfo,
-//     state_item: Item<State>,
-//     bettors: Map<&Addr, BetInfo>,
-// ) -> Result<Response, ContractError> {
-//     let sender = info.sender;
-//     let rewards = info.funds;
-//     let mut state = state_item.load(deps.storage)?;
-
-//     if state.owner != sender {
-//         return Err(ContractError::UnauthorizedErr {});
-//     }
-
-//     let block_height = env.block.height;
-//     let lottery_sequnce = state.height;
-
-//     // Only can buy lottery after created block height
-//     if state.height > block_height {
-//         return Err(ContractError::LotterySequenceNotMatchErr {
-//             height: block_height,
-//             sequence: lottery_sequnce,
-//         });
-//     }
-
-//     // Can't buy lottery after lottery is already closed
-//     if state.winner.is_some() {
-//         return Err(ContractError::LotteryIsAlreadyClosedErr {
-//             addr: env.contract.address,
-//         });
-//     }
-
-//     let winner = choose_winner(bettors, deps.storage)?;
-
-//     ensure!(winner.is_some(), ContractError::LotteryNoBettorErr {});
-
-//     // Set the rewards
-//     state.rewards = rewards;
-
-//     state.owner = winner.clone().unwrap();
-
-//     // Choose the winner
-//     state.winner = winner;
 
 //     state_item.save(deps.storage, &state)?;
 
@@ -243,10 +248,12 @@ pub fn buy_ticket(
 //         .add_attribute("sender", sender.as_str()))
 // }
 
-// pub fn choose_winner(
-//     bettors: Map<&Addr, BetInfo>,
-//     storage: &dyn Storage,
-// ) -> Result<Option<Addr>, ContractError> {
-//     let winner = bettors.first(storage)?;
-//     Ok(winner.map(|(k, _)| k))
-// }
+// TODO Choose winner use random number in players
+pub fn choose_winner_infos(
+    players: Map<&Addr, PlayerInfo>,
+    storage: &dyn Storage,
+) -> Result<Vec<PlayerInfo>, ContractError> {
+    // TODO get first
+    let winner = players.first(storage)?;
+    Ok(winner.into_iter().map(|(_, player)| player).collect())
+}

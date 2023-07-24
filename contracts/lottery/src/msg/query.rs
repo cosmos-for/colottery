@@ -1,7 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Coin};
 
-use crate::state::{State, WinnerInfo};
+use crate::state::{PlayerInfo, State, WinnerInfo};
 
 #[cw_serde]
 #[derive(QueryResponses)]
@@ -14,8 +14,8 @@ pub enum QueryMsg {
     Owner {},
     #[returns(CurrentStateResp)]
     CurrentState {},
-    #[returns(IsJoinedResp)]
-    IsJoined { address: String },
+    #[returns(PlayInfoResp)]
+    PlayInfo { address: String },
 }
 
 #[cw_serde]
@@ -44,6 +44,6 @@ pub struct CurrentStateResp {
 }
 
 #[cw_serde]
-pub struct IsJoinedResp {
-    pub joined: bool,
+pub struct PlayInfoResp {
+    pub info: Option<PlayerInfo>,
 }

@@ -24,6 +24,13 @@ pub fn instantiate(
         });
     }
 
+    // Only support OnlyOnce now
+    if !msg.selection.is_jackpot() {
+        return Err(ContractError::UnSupportedWinnerSelection {
+            selection: msg.selection,
+        });
+    }
+
     let created_at = env.block.time;
     let period: LotteryPeriod = msg.period.parse()?;
     let expiration = period.get_deadline(created_at);

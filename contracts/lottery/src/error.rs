@@ -2,6 +2,8 @@ use cosmwasm_std::{Addr, StdError, Uint128};
 use cw_utils::PaymentError;
 use thiserror::Error;
 
+use crate::state::WinnerSelection;
+
 #[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
     #[error("{0}")]
@@ -38,7 +40,10 @@ pub enum ContractError {
     BalanceTooSmall {},
 
     #[error("Not support denom: {denom}")]
-    NotSupportDenom { denom: String },
+    UnSupportedDenom { denom: String },
+
+    #[error("Unsupport selection: {:?}", selection)]
+    UnSupportedWinnerSelection { selection: WinnerSelection },
 
     #[error("{player} Only can buy a lottery: {lottery} once")]
     LotteryCanBuyOnce { player: Addr, lottery: Addr },
