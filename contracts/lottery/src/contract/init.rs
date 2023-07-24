@@ -31,6 +31,7 @@ pub fn instantiate(
     let config = State {
         name: msg.name.clone(),
         symbol: msg.symobl.clone(),
+        height: env.block.height,
         created_at,
         expiratoin: expiration,
         unit_price: msg.unit_price,

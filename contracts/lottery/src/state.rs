@@ -13,6 +13,7 @@ use crate::{ContractError, Extension};
 pub struct State {
     pub name: String,
     pub symbol: String,
+    pub height: u64,
     pub created_at: Timestamp,
     pub expiratoin: Timestamp,
     pub unit_price: Uint128,
@@ -23,6 +24,12 @@ pub struct State {
     pub status: GameStatus,
     pub winner: Vec<WinnerInfo>,
     pub extension: Extension,
+}
+
+impl State {
+    pub fn is_closed(&self) -> bool {
+        self.status == GameStatus::Ended
+    }
 }
 
 #[cw_serde]

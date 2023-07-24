@@ -1,10 +1,11 @@
 #[cfg(test)]
 mod test {
+    use cosmwasm_std::Uint128;
     use cw_multi_test::App;
 
     use crate::{
         multitest::{owner, LotteryCodeId},
-        state::WinnerSelection,
+        state::{GameStatus, WinnerSelection},
     };
 
     #[test]
@@ -32,11 +33,26 @@ mod test {
             )
             .unwrap();
 
+        // check winner
         let winner = contract.winner(&app).unwrap();
         assert_eq!(winner.winner, vec![]);
 
+        // check owner
         let contract_owner = contract.owner(&app).unwrap();
         assert_eq!(contract_owner.owner, owner());
+
+        // check state
+        let state = contract.query_state(&app).unwrap().state;
+        assert_eq!(state.name, "LOTTERY");
+        assert_eq!(state.unit_price, Uint128::new(100));
+        assert_eq!(state.max_players, 3);
+        assert_eq!(state.status, GameStatus::Activing);
+        assert_eq!(state.player_count, 0);
+        assert_eq!(state.selection, WinnerSelection::OnlyOne {});
+
+        // check is joined
+        let is_joined = contract.is_joined(&app, owner().as_str()).unwrap();
+        assert!(!is_joined.joined);
     }
 
     #[test]

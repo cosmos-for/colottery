@@ -4,7 +4,7 @@ mod tests;
 use anyhow::Result as AnyResult;
 
 use cosmwasm_std::{Addr, Coin, StdResult, Uint128};
-use cw_multi_test::{App, ContractWrapper, Executor};
+use cw_multi_test::{App, AppResponse, ContractWrapper, Executor};
 
 use crate::{
     contract::{execute, instantiate, query, reply},
@@ -99,25 +99,16 @@ impl LotteryContract {
         .map(Self::from)
     }
 
-    // #[track_caller]
-    // pub fn buy(
-    //     &self,
-    //     app: &mut App,
-    //     sender: Addr,
-    //     denom: &str,
-    //     memo: Option<String>,
-    //     funds: &[Coin],
-    // ) -> AnyResult<AppResponse> {
-    //     app.execute_contract(
-    //         sender,
-    //         self.addr(),
-    //         &ExecuteMsg::Buy {
-    //             denom: denom.into(),
-    //             memo,
-    //         },
-    //         funds,
-    //     )
-    // }
+    #[track_caller]
+    pub fn buy(
+        &self,
+        app: &mut App,
+        sender: Addr,
+        memo: Option<String>,
+        funds: &[Coin],
+    ) -> AnyResult<AppResponse> {
+        app.execute_contract(sender, self.addr(), &ExecuteMsg::BuyTicket { memo }, funds)
+    }
 
     // #[track_caller]
     // pub fn draw(&self, app: &mut App, sender: Addr, rewards: &[Coin]) -> AnyResult<AppResponse> {
@@ -160,6 +151,15 @@ impl LotteryContract {
     pub fn query_state(&self, app: &App) -> StdResult<CurrentStateResp> {
         app.wrap()
             .query_wasm_smart(self.addr(), &QueryMsg::CurrentState {})
+    }
+
+    pub fn is_joined(&self, app: &App, address: &str) -> StdResult<IsJoinedResp> {
+        app.wrap().query_wasm_smart(
+            self.addr(),
+            &QueryMsg::IsJoined {
+                address: address.into(),
+            },
+        )
     }
 }
 

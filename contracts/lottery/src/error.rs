@@ -1,4 +1,5 @@
-use cosmwasm_std::{StdError, Uint128};
+use cosmwasm_std::{Addr, StdError, Uint128};
+use cw_utils::PaymentError;
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
@@ -35,6 +36,29 @@ pub enum ContractError {
 
     #[error("The contract balance is too small")]
     BalanceTooSmall {},
+
+    #[error("Not support denom: {denom}")]
+    NotSupportDenom { denom: String },
+
+    #[error("{player} Only can buy a lottery: {lottery} once")]
+    LotteryCanBuyOnce { player: Addr, lottery: Addr },
+
+    #[error("The payment funds is not enough")]
+    PaymentNotEnough { amount: Uint128 },
+
+    #[error("error(0)")]
+    PaymentError(#[from] PaymentError),
+
+    #[error(
+        "Current height: {current_height} must greater than lottery start height: {lottery_height}"
+    )]
+    LotteryHeightNotMatch {
+        current_height: u64,
+        lottery_height: u64,
+    },
+
+    #[error("Lottery is already closed")]
+    LotteryAlreadyClosed { address: Addr },
 
     #[error("The contract has nothing to claim")]
     NothingToClaim {},

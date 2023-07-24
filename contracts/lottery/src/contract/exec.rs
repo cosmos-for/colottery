@@ -1,8 +1,13 @@
 use cosmwasm_std::{DepsMut, Empty, Env, MessageInfo, Response};
 
 use cw721_base::Cw721Contract;
+use cw_utils::must_pay;
 
-use crate::{msg::ExecuteMsg, ContractError, Extension};
+use crate::{
+    msg::ExecuteMsg,
+    state::{PlayerInfo, PLAYERS, STATE},
+    ContractError, Extension, ARCH_DEMON,
+};
 
 type Cw721BaseContract<'a> = Cw721Contract<'a, Extension, Empty, Empty, Empty>;
 
@@ -36,84 +41,91 @@ impl<'a> BaseExecute for Cw721BaseContract<'a> {
 }
 
 pub fn execute(
-    _deps: DepsMut,
-    _env: Env,
-    _info: MessageInfo,
-    _msg: ExecuteMsg,
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
-    // use ExecuteMsg::*;
+    use ExecuteMsg::*;
 
-    // match msg {
-    //     Buy { denom, memo } => exec::buy(deps, env, info, memo, denom, STATE, BETTORS),
-    //     Draw {} => exec::draw(deps, env, info, STATE, BETTORS),
-    //     WithdrawRewards { amount, denom } => {
-    //         exec::withdraw(deps, env, info, amount, denom.as_str(), STATE, WITHDRAWS)
-    //     }
-    //     Transfer { recipient } => exec::transfer(deps, env, info, recipient, STATE),
-    // }
-
-    todo!()
+    match msg {
+        BuyTicket { denom, memo } => buy_ticket(deps, env, info, &denom, memo),
+        // Draw {} => exec::draw(deps, env, info, STATE, BETTORS),
+        // WithdrawRewards { amount, denom } => {
+        //     exec::withdraw(deps, env, info, amount, denom.as_str(), STATE, WITHDRAWS)
+        // }
+        // Transfer { recipient } => exec::transfer(deps, env, info, recipient, STATE),
+        _ => unimplemented!(),
+    }
 }
 
-// #[allow(clippy::too_many_arguments)]
-// pub fn buy(
-//     deps: DepsMut,
-//     env: Env,
-//     info: MessageInfo,
-//     // addr: String,
-//     memo: Option<String>,
-//     denom: String,
-//     state: Item<State>,
-//     bettors: Map<&Addr, BetInfo>,
-// ) -> Result<Response, ContractError> {
-//     let amount = must_pay(&info, &denom)?.u128();
+#[allow(clippy::too_many_arguments)]
+pub fn buy_ticket(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    denom: &str,
+    memo: Option<String>,
+) -> Result<Response, ContractError> {
+    // Check funds pay, only support ARCH first
+    if denom != ARCH_DEMON {
+        return Err(ContractError::NotSupportDenom {
+            denom: denom.into(),
+        });
+    }
 
-//     if amount < LOTTERY_FEE {
-//         return Err(ContractError::PaymentNotEnoughErr {});
-//     }
+    let amount = must_pay(&info, denom)?;
 
-//     let state = state.load(deps.storage)?;
-//     let lottery_sequnce = state.height;
+    let state = STATE.load(deps.storage)?;
 
-//     let contract_addr = env.contract.address;
-//     let block_height = env.block.height;
+    if amount < state.unit_price {
+        return Err(ContractError::PaymentNotEnough { amount });
+    }
 
-//     // Only can buy lottery after created block height
-//     if state.height > block_height {
-//         return Err(ContractError::LotterySequenceNotMatchErr {
-//             height: block_height,
-//             sequence: lottery_sequnce,
-//         });
-//     }
-//     // Can't buy lottery after lottery is already closed
-//     if state.winner.is_some() {
-//         return Err(ContractError::LotteryIsAlreadyClosedErr {
-//             addr: contract_addr,
-//         });
-//     }
+    let lottery_sequnce = state.height;
 
-//     let sender = info.sender;
-//     let bettor = bettors.may_load(deps.storage, &sender)?;
+    let contract_addr = env.contract.address;
+    let block_height = env.block.height;
 
-//     // Only can buy lottery once
-//     match bettor {
-//         Some(_) => Err(ContractError::OnlyBuyLotteryOnceErr {
-//             agent: sender.to_string(),
-//             addr: contract_addr,
-//         }),
-//         None => {
-//             bettors.save(
-//                 deps.storage,
-//                 &sender,
-//                 &BetInfo {
-//                     buy_at: block_height,
-//                     memo,
-//                 },
-//             )?;
-//             Ok(Response::new())
-//         }
-//     }
-// }
+    // Only can buy lottery after created block height
+    if state.height > block_height {
+        return Err(ContractError::LotteryHeightNotMatch {
+            current_height: block_height,
+            lottery_height: lottery_sequnce,
+        });
+    }
+
+    // Can't buy lottery after lottery is already closed
+    if state.is_closed() {
+        return Err(ContractError::LotteryAlreadyClosed {
+            address: contract_addr,
+        });
+    }
+
+    let sender = info.sender;
+    let player = PLAYERS.may_load(deps.storage, &sender)?;
+
+    // Only can buy lottery once
+    match player {
+        Some(_) => Err(ContractError::LotteryCanBuyOnce {
+            player: sender,
+            lottery: contract_addr,
+        }),
+        None => {
+            PLAYERS.save(
+                deps.storage,
+                &sender,
+                &PlayerInfo {
+                    address: sender.clone(),
+                    height: block_height,
+                    buy_at: block_height,
+                    memo,
+                },
+            )?;
+            Ok(Response::new())
+        }
+    }
+}
 
 // pub fn transfer(
 //     deps: DepsMut,
