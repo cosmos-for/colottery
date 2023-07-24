@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, DepsMut, Empty, Env, MessageInfo, Response, Storage};
+use cosmwasm_std::{attr, Addr, DepsMut, Empty, Env, MessageInfo, Response, Storage};
 
 use cw721_base::Cw721Contract;
 use cw_storage_plus::Map;
@@ -52,6 +52,7 @@ pub fn execute(
     match msg {
         BuyTicket { denom, memo } => buy_ticket(deps, env, info, &denom, memo),
         DrawLottery {} => draw_lottery(deps, env, info),
+        CliamLottery {} => claim_lottery(deps, info),
         // WithdrawRewards { amount, denom } => {
         //     withdraw(deps, env, info, amount, denom.as_str(), STATE, WITHDRAWS)
         // }
@@ -83,17 +84,21 @@ pub fn buy_ticket(
         return Err(ContractError::PaymentNotEnough { amount });
     }
 
-    let lottery_sequnce = state.height;
+    let lottery_height = state.height;
 
     let contract_addr = env.contract.address;
-    let block_height = env.block.height;
+    let current_height = env.block.height;
 
     // Only can buy lottery after created block height
-    if state.height > block_height {
+    if state.height > current_height {
         return Err(ContractError::LotteryHeightNotMatch {
-            current_height: block_height,
-            lottery_height: lottery_sequnce,
+            current_height,
+            lottery_height,
         });
+    }
+
+    if env.block.time >= state.expiratoin {
+        return Err(ContractError::AlreadyExpired {});
     }
 
     // Can't buy lottery after lottery is already closed
@@ -121,8 +126,8 @@ pub fn buy_ticket(
                 &sender,
                 &PlayerInfo {
                     address: sender.clone(),
-                    height: block_height,
-                    buy_at: block_height,
+                    height: current_height,
+                    buy_at: current_height,
                     memo,
                 },
             )?;
@@ -180,6 +185,25 @@ pub fn draw_lottery(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Respon
     STATE.save(deps.storage, &state)?;
 
     Ok(Response::new())
+}
+
+pub fn claim_lottery(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
+    let sender = &info.sender;
+    let state = STATE.load(deps.storage)?;
+
+    if state.is_closed() && state.winner.first().map(|w| &w.address) == Some(sender) {
+        OWNER.save(deps.storage, sender)?;
+
+        let attributes = vec![
+            attr("action", "claim_lottery"),
+            attr("sender", sender.as_str()),
+            attr("owner", sender),
+        ];
+
+        Ok(Response::new().add_attributes(attributes))
+    } else {
+        Err(ContractError::Unauthorized {})
+    }
 }
 
 // pub fn transfer(

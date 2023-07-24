@@ -119,10 +119,15 @@ impl LotteryContract {
         )
     }
 
-    // #[track_caller]
-    // pub fn draw(&self, app: &mut App, sender: Addr, rewards: &[Coin]) -> AnyResult<AppResponse> {
-    //     app.execute_contract(sender, self.addr(), &ExecuteMsg::Draw {}, rewards)
-    // }
+    #[track_caller]
+    pub fn draw_lottery(&self, app: &mut App, sender: Addr) -> AnyResult<AppResponse> {
+        app.execute_contract(sender, self.addr(), &ExecuteMsg::DrawLottery {}, &[])
+    }
+
+    #[track_caller]
+    pub fn claim_lottery(&self, app: &mut App, sender: Addr) -> AnyResult<AppResponse> {
+        app.execute_contract(sender, self.addr(), &ExecuteMsg::CliamLottery {}, &[])
+    }
 
     // #[track_caller]
     // pub fn withdraw(

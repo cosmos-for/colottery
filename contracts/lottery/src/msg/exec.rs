@@ -15,6 +15,7 @@ pub enum ExecuteMsg {
     DrawLottery {
         // lottery: String,
     },
+    CliamLottery {},
     Send {
         contract: String,
         msg: Binary,

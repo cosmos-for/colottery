@@ -5,8 +5,8 @@ mod test {
 
     use crate::{
         multitest::{alice, bob, owner, LotteryCodeId, LotteryContract},
-        state::{self, GameStatus, WinnerSelection},
-        ARCH_DEMON,
+        state::{GameStatus, WinnerSelection},
+        ContractError, ARCH_DEMON,
     };
 
     #[test]
@@ -129,27 +129,72 @@ mod test {
 
         assert_eq!(resp.address, alice());
         assert_eq!(resp.memo, Some("恭喜发财!".to_string()));
+
+        // draw lottery
+        contract.draw_lottery(&mut app, owner()).unwrap();
+
+        contract.claim_lottery(&mut app, alice()).unwrap();
+
+        let owner = contract.owner(&app).unwrap();
+        assert_eq!(owner.owner, alice());
+
+        let state = contract.query_state(&app).unwrap();
+        assert_eq!(state.state.player_count, 2);
+        assert_eq!(state.state.winner.len(), 1);
+
+        let winner = state.state.winner.first().unwrap();
+        assert_eq!(winner.address, alice());
+        assert_eq!(winner.prize, coins(200, ARCH_DEMON));
     }
 
     #[test]
     fn draw_lottery_should_fail() {
-        // let mut app = App::new(|router, _api, storage| {
-        //     router
-        //         .bank
-        //         .init_balance(storage, &alice(), coins(3000, NATIVE_DENOM))
-        //         .unwrap();
-        // });
+        let mut app = App::new(|router, _api, storage| {
+            router
+                .bank
+                .init_balance(storage, &alice(), coins(300, ARCH_DEMON))
+                .unwrap();
+            router
+                .bank
+                .init_balance(storage, &bob(), coins(500, ARCH_DEMON))
+                .unwrap();
+        });
 
-        // let code_id = LotteryCodeId::store_code(&mut app);
-        // let title = "lottery title";
-        // let contract = code_id
-        //     .instantiate(&mut app, owner(), title, "lottery test")
-        //     .unwrap();
+        let code_id = LotteryCodeId::store_code(&mut app);
+        let name = "LOTTERY";
+        let symbol = "LOTTER";
+        let unit_price = 100;
+        let period = "hour";
+        let selection = WinnerSelection::Jackpot {};
+        let max_players = 3;
+        let label = "Lottery label";
+        let contract = code_id
+            .instantiate(
+                &mut app,
+                owner(),
+                name,
+                symbol,
+                unit_price,
+                period,
+                selection,
+                max_players,
+                label,
+            )
+            .unwrap();
 
-        // let err = contract
-        //     .draw(&mut app, alice(), &coins(1000, NATIVE_DENOM))
-        //     .unwrap_err();
-        // assert_eq!(ContractError::UnauthorizedErr {}, err.downcast().unwrap())
+        // Buy ticket
+        contract
+            .buy(
+                &mut app,
+                alice(),
+                ARCH_DEMON,
+                Some("恭喜发财!".to_string()),
+                &coins(100, ARCH_DEMON),
+            )
+            .unwrap();
+
+        let err = contract.draw_lottery(&mut app, alice()).unwrap_err();
+        assert_eq!(ContractError::Unauthorized {}, err.downcast().unwrap())
     }
 
     #[test]
