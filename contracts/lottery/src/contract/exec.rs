@@ -1,45 +1,44 @@
-use cosmwasm_std::{attr, Addr, DepsMut, Empty, Env, MessageInfo, Response, Storage};
+use cosmwasm_std::{attr, coins, Addr, BankMsg, DepsMut, Env, MessageInfo, Response, Storage};
 
-use cw721_base::Cw721Contract;
 use cw_storage_plus::Map;
 use cw_utils::must_pay;
 
 use crate::{
     msg::ExecuteMsg,
     state::{GameStatus, PlayerInfo, WinnerInfo, OWNER, PLAYERS, STATE},
-    ContractError, Extension, ARCH_DEMON,
+    ContractError, ARCH_DEMON,
 };
 
-type Cw721BaseContract<'a> = Cw721Contract<'a, Extension, Empty, Empty, Empty>;
+// type Cw721BaseContract<'a> = Cw721Contract<'a, Extension, Empty, Empty, Empty>;
 
-pub trait BaseExecute {
-    fn base_execute(
-        &self,
-        deps: DepsMut,
-        env: Env,
-        info: MessageInfo,
-        msg: ExecuteMsg,
-    ) -> Result<Response, ContractError>;
-}
+// pub trait BaseExecute {
+//     fn base_execute(
+//         &self,
+//         deps: DepsMut,
+//         env: Env,
+//         info: MessageInfo,
+//         msg: ExecuteMsg,
+//     ) -> Result<Response, ContractError>;
+// }
 
-impl<'a> BaseExecute for Cw721BaseContract<'a> {
-    fn base_execute(
-        &self,
-        deps: DepsMut,
-        env: Env,
-        info: MessageInfo,
-        msg: ExecuteMsg,
-    ) -> Result<Response, ContractError> {
-        let cw721_msg = msg.try_into()?;
+// impl<'a> BaseExecute for Cw721BaseContract<'a> {
+//     fn base_execute(
+//         &self,
+//         deps: DepsMut,
+//         env: Env,
+//         info: MessageInfo,
+//         msg: ExecuteMsg,
+//     ) -> Result<Response, ContractError> {
+//         let cw721_msg = msg.try_into()?;
 
-        let execute_res = self.execute(deps, env, info, cw721_msg);
+//         let execute_res = self.execute(deps, env, info, cw721_msg);
 
-        match execute_res {
-            Ok(res) => Ok(res),
-            Err(err) => Err(ContractError::try_from(err)?),
-        }
-    }
-}
+//         match execute_res {
+//             Ok(res) => Ok(res),
+//             Err(err) => Err(ContractError::try_from(err)?),
+//         }
+//     }
+// }
 
 pub fn execute(
     deps: DepsMut,
@@ -53,11 +52,12 @@ pub fn execute(
         BuyTicket { denom, memo } => buy_ticket(deps, env, info, &denom, memo),
         DrawLottery {} => draw_lottery(deps, env, info),
         CliamLottery {} => claim_lottery(deps, info),
-        // WithdrawRewards { amount, denom } => {
-        //     withdraw(deps, env, info, amount, denom.as_str(), STATE, WITHDRAWS)
-        // }
-        // Transfer { recipient } => transfer(deps, env, info, recipient, STATE),
-        _ => unimplemented!(),
+        WithdrawFunds {
+            amount,
+            denom,
+            recipient,
+        } => withdraw(deps, env, info, amount, denom.as_str(), recipient),
+        Transfer { recipient } => transfer(deps, env, info, recipient),
     }
 }
 
@@ -131,7 +131,16 @@ pub fn buy_ticket(
                     memo,
                 },
             )?;
-            Ok(Response::new())
+
+            let attributes = vec![
+                attr("action", "buy_ticket"),
+                attr("sender", sender.as_str()),
+                attr("denom", denom),
+                attr("amount", amount.to_string()),
+                attr("height", current_height.to_string()),
+            ];
+
+            Ok(Response::new().add_attributes(attributes))
         }
     }
 }
@@ -184,7 +193,13 @@ pub fn draw_lottery(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Respon
 
     STATE.save(deps.storage, &state)?;
 
-    Ok(Response::new())
+    let attributes = vec![
+        attr("action", "draw_lottery"),
+        attr("sender", sender.as_str()),
+        attr("height", current_height.to_string()),
+    ];
+
+    Ok(Response::new().add_attributes(attributes))
 }
 
 pub fn claim_lottery(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
@@ -206,71 +221,74 @@ pub fn claim_lottery(deps: DepsMut, info: MessageInfo) -> Result<Response, Contr
     }
 }
 
-// pub fn transfer(
-//     deps: DepsMut,
-//     _env: Env,
-//     info: MessageInfo,
-//     recipient: String,
-//     state_item: Item<State>,
-// ) -> Result<Response, ContractError> {
-//     let sender = info.sender;
-//     let mut state = state_item.load(deps.storage)?;
+pub fn transfer(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    recipient: String,
+) -> Result<Response, ContractError> {
+    let sender = info.sender;
+    let owner = OWNER.load(deps.storage)?;
 
-//     if sender != state.owner {
-//         return Err(ContractError::UnauthorizedErr {});
-//     }
+    if sender != owner {
+        return Err(ContractError::Unauthorized {});
+    }
 
-//     let owner = deps.api.addr_validate(&recipient)?;
+    let recipient: Addr = deps.api.addr_validate(&recipient)?;
+    let height = env.block.height;
 
-//     state.owner = owner;
+    OWNER.save(deps.storage, &recipient)?;
 
-//     state_item.save(deps.storage, &state)?;
+    let attributes = vec![
+        attr("action", "transfer_lottery"),
+        attr("sender", sender.as_str()),
+        attr("recipient", recipient.as_str()),
+        attr("height", height.to_string()),
+    ];
 
-//     Ok(Response::new())
-// }
+    Ok(Response::new().add_attributes(attributes))
+}
 
-// pub fn withdraw(
-//     deps: DepsMut,
-//     env: Env,
-//     info: MessageInfo,
-//     amount: u128,
-//     denom: &str,
-//     state_item: Item<State>,
-//     withdraws: Map<&Addr, Vec<Coin>>,
-// ) -> Result<Response, ContractError> {
-//     let sender = info.sender;
-//     let state = state_item.load(deps.storage)?;
+pub fn withdraw(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    amount: u128,
+    denom: &str,
+    recipient: Option<String>,
+) -> Result<Response, ContractError> {
+    let sender = info.sender;
 
-//     if sender != state.owner {
-//         return Err(ContractError::UnauthorizedErr {});
-//     }
+    let owner = OWNER.load(deps.storage)?;
 
-//     let balance = deps.querier.query_balance(env.contract.address, denom)?;
-//     if balance.amount.u128() < amount {
-//         return Err(ContractError::WidthrawAmountTooMuchErr {
-//             amount,
-//             denom: denom.into(),
-//         });
-//     }
+    if sender != owner {
+        return Err(ContractError::Unauthorized {});
+    }
 
-//     let ws = withdraws.may_load(deps.storage, &sender)?;
+    let balance = deps.querier.query_balance(env.contract.address, denom)?;
+    if balance.amount.u128() < amount {
+        return Err(ContractError::BalanceTooSmall { balance });
+    }
 
-//     let mut ws = ws.unwrap_or_default();
-//     let withdraw_coin = coin(amount, denom);
-//     ws.push(withdraw_coin.clone());
+    let recipient = recipient.unwrap_or(sender.to_string());
 
-//     withdraws.save(deps.storage, &sender, &ws)?;
+    let bank_msg = BankMsg::Send {
+        to_address: recipient.clone(),
+        amount: coins(amount, denom),
+    };
 
-//     let bank_msg = BankMsg::Send {
-//         to_address: sender.as_str().into(),
-//         amount: vec![withdraw_coin],
-//     };
+    let attributes = vec![
+        attr("action", "withdraw"),
+        attr("sender", sender.as_str()),
+        attr("recipient", recipient),
+        attr("amount", amount.to_string()),
+        attr("denom", denom),
+    ];
 
-//     Ok(Response::new()
-//         .add_message(bank_msg)
-//         .add_attribute("action", "withdraw")
-//         .add_attribute("sender", sender.as_str()))
-// }
+    Ok(Response::new()
+        .add_message(bank_msg)
+        .add_attributes(attributes))
+}
 
 // TODO Choose winner use random number in players
 pub fn choose_winner_infos(

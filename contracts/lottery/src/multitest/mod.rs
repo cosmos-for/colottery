@@ -129,24 +129,26 @@ impl LotteryContract {
         app.execute_contract(sender, self.addr(), &ExecuteMsg::CliamLottery {}, &[])
     }
 
-    // #[track_caller]
-    // pub fn withdraw(
-    //     &self,
-    //     app: &mut App,
-    //     sender: Addr,
-    //     amount: u128,
-    //     denom: &str,
-    // ) -> AnyResult<AppResponse> {
-    //     app.execute_contract(
-    //         sender,
-    //         self.addr(),
-    //         &ExecuteMsg::WithdrawRewards {
-    //             amount,
-    //             denom: denom.into(),
-    //         },
-    //         &[],
-    //     )
-    // }
+    #[track_caller]
+    pub fn withdraw(
+        &self,
+        app: &mut App,
+        sender: Addr,
+        amount: u128,
+        denom: &str,
+        recipient: Option<String>,
+    ) -> AnyResult<AppResponse> {
+        app.execute_contract(
+            sender,
+            self.addr(),
+            &ExecuteMsg::WithdrawFunds {
+                amount,
+                denom: denom.into(),
+                recipient,
+            },
+            &[],
+        )
+    }
 
     pub fn winner(&self, app: &App) -> StdResult<WinnerResp> {
         app.wrap()

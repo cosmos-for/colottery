@@ -145,6 +145,23 @@ mod test {
         let winner = state.state.winner.first().unwrap();
         assert_eq!(winner.address, alice());
         assert_eq!(winner.prize, coins(200, ARCH_DEMON));
+
+        // withdraw funds
+        contract
+            .withdraw(&mut app, alice(), 100, ARCH_DEMON, None)
+            .unwrap();
+        contract
+            .withdraw(&mut app, alice(), 100, ARCH_DEMON, Some(bob().to_string()))
+            .unwrap();
+
+        let balances = LotteryContract::query_balances(&app, contract.addr()).unwrap();
+        assert!(balances.is_empty());
+
+        let alice_balances = LotteryContract::query_balances(&app, alice()).unwrap();
+        assert_eq!(alice_balances, coins(300, ARCH_DEMON));
+
+        let bob_balances = LotteryContract::query_balances(&app, bob()).unwrap();
+        assert_eq!(bob_balances, coins(500, ARCH_DEMON));
     }
 
     #[test]

@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, StdError, Uint128};
+use cosmwasm_std::{Addr, Coin, StdError, Uint128};
 use cw_utils::PaymentError;
 use thiserror::Error;
 
@@ -37,7 +37,7 @@ pub enum ContractError {
     UnbondTooSmall { min_bonded: Uint128, denom: String },
 
     #[error("The contract balance is too small")]
-    BalanceTooSmall {},
+    BalanceTooSmall { balance: Coin },
 
     #[error("Not support denom: {denom}")]
     UnSupportedDenom { denom: String },
