@@ -16,7 +16,7 @@ pub struct InstantiateMsg {
     pub unit_price: Uint128,
     pub period: String,
     pub selection: WinnerSelection,
-    pub max_bettors: u32,
+    pub max_players: u32,
 }
 
 impl InstantiateMsg {
@@ -24,17 +24,17 @@ impl InstantiateMsg {
         name: impl Into<String>,
         symobl: impl Into<String>,
         unit_price: Uint128,
-        period: String,
+        period: impl Into<String>,
         selection: WinnerSelection,
-        max_bettors: u32,
+        max_players: u32,
     ) -> Self {
         Self {
             name: name.into(),
             symobl: symobl.into(),
             unit_price,
-            period,
+            period: period.into(),
             selection,
-            max_bettors,
+            max_players,
         }
     }
 }

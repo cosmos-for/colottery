@@ -45,7 +45,7 @@ pub fn instantiate(
         period,
         selection: msg.selection,
         player_count: 0,
-        max_players: msg.max_bettors,
+        max_players: msg.max_players,
         status: GameStatus::Activing,
         winner: vec![],
         extension: Default::default(),

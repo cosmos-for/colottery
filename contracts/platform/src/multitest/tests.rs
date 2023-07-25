@@ -2,6 +2,7 @@
 mod test {
     use cosmwasm_std::{coins, Uint128};
     use cw_multi_test::App;
+    use lottery::multitest::LotteryCodeId;
 
     use crate::{
         multitest::{alice, bob, owner, PlatformCodeId, PlatformContract},
@@ -12,10 +13,12 @@ mod test {
     fn platform_instantiate_should_works() {
         let mut app = App::default();
         let code_id = PlatformCodeId::store_code(&mut app);
+        let lottery_code_id = LotteryCodeId::store_code(&mut app);
         let name = "PLATFORM";
-
         let label = "Lottery label";
-        let contract = code_id.instantiate(&mut app, owner(), name, label).unwrap();
+        let contract = code_id
+            .instantiate(&mut app, owner(), name, lottery_code_id.into(), label)
+            .unwrap();
 
         // check owner
         let contract_owner = contract.owner(&app).unwrap();

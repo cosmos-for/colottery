@@ -83,7 +83,7 @@ impl LotteryContract {
             name,
             symbol,
             Uint128::new(unit_price),
-            period.into(),
+            period,
             selection,
             max_bettors,
         );

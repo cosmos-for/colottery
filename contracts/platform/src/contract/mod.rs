@@ -10,6 +10,9 @@ use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, Std
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
+pub const CREATE_LOTTERY_REPLY_ID: u64 = 1;
+pub const DRAW_LOTTERY_REPLY_ID: u64 = 2;
+
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:colottery-lottery";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");

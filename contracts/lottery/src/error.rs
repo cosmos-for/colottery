@@ -19,7 +19,7 @@ pub enum ContractError {
     InvalidUnitPrice { value: Uint128 },
 
     #[error("Operation not implemented")]
-    UnimplementedErr {},
+    Unimplemented {},
 
     #[error("{validator} is not in validator set")]
     NoInValidatorSet { validator: String },
@@ -133,7 +133,7 @@ impl TryFrom<cw721_base::ContractError> for ContractError {
             Claimed {} => Ok(ContractError::AlreadyClaimed {}),
             Expired {} => Ok(ContractError::AlreadyExpired {}),
             ApprovalNotFound { spender } => Ok(ContractError::ApprovalNotFound { spender }),
-            _ => Err(ContractError::UnimplementedErr {}),
+            _ => Err(ContractError::Unimplemented {}),
         }
     }
 }

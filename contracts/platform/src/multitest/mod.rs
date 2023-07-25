@@ -27,9 +27,10 @@ impl PlatformCodeId {
         app: &mut App,
         sender: Addr,
         name: &str,
+        lottery_code_id: u64,
         label: &str,
     ) -> AnyResult<PlatformContract> {
-        PlatformContract::instantiate(app, self, sender, name, label)
+        PlatformContract::instantiate(app, self, sender, name, lottery_code_id, label)
     }
 }
 
@@ -55,9 +56,10 @@ impl PlatformContract {
         code_id: PlatformCodeId,
         sender: Addr,
         name: &str,
+        lottery_code_id: u64,
         label: &str,
     ) -> AnyResult<Self> {
-        let init_msg = InstantiateMsg::new(name);
+        let init_msg = InstantiateMsg::new(name, lottery_code_id);
 
         app.instantiate_contract(
             code_id.0,
@@ -68,6 +70,18 @@ impl PlatformContract {
             None,
         )
         .map(Self::from)
+    }
+
+    #[track_caller]
+    pub fn create_lottery(
+        app: &mut App,
+        code_id: PlatformCodeId,
+        sender: Addr,
+        name: &str,
+        lottery_code_id: u64,
+        label: &str,
+    ) -> AnyResult<AppResponse> {
+        todo!()
     }
 
     #[track_caller]
@@ -83,7 +97,7 @@ impl PlatformContract {
         app.execute_contract(
             sender,
             self.addr(),
-            &ExecuteMsg::BuyTicket {
+            &ExecuteMsg::BuyLottery {
                 lottery: lottery.into(),
                 denom: denom.into(),
                 memo,

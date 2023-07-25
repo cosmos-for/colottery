@@ -23,6 +23,7 @@ pub fn instantiate(
         env.block.height,
         env.block.time,
         sender.to_owned(),
+        msg.lottery_code_id,
     );
 
     STATE.save(deps.storage, &state)?;
