@@ -153,7 +153,8 @@ pub struct Metadata {
 
 #[cw_serde]
 pub struct PlayerInfo {
-    pub address: Addr,
+    pub player_addr: Addr,
+    pub lottery_addr: Addr,
     pub buy_at: u64,
     pub height: u64,
     pub memo: Option<String>,

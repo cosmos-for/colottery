@@ -129,7 +129,7 @@ dependencies = [
 
 [[package]]
 name = "common"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -763,7 +763,7 @@ checksum = "b06a4cde4c0f271a446782e3eff8de789548ce57dbc8eca9292c27f4a42004b4"
 
 [[package]]
 name = "lottery"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -813,6 +813,30 @@ checksum = "9eca2c590a5f85da82668fa685c09ce2888b9430e83299debf1f34b65fd4a4ba"
 dependencies = [
  "der",
  "spki",
+]
+
+[[package]]
+name = "platform"
+version = "1.0.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "common",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-controllers",
+ "cw-multi-test",
+ "cw-storage-plus 1.1.0",
+ "cw-utils 1.0.1",
+ "cw2 1.1.0",
+ "cw20",
+ "cw20-base",
+ "cw721-base 0.18.0",
+ "lottery",
+ "schemars",
+ "serde",
+ "thiserror",
 ]
 
 [[package]]
