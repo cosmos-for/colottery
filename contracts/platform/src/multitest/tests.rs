@@ -4,55 +4,36 @@ mod test {
     use cw_multi_test::App;
 
     use crate::{
-        multitest::{alice, bob, owner, LotteryCodeId, LotteryContract},
+        multitest::{alice, bob, owner, PlatformCodeId, PlatformContract},
         ContractError, ARCH_DEMON,
     };
 
     #[test]
-    fn instantiate_should_works() {
-        // let mut app = App::default();
-        // let code_id = LotteryCodeId::store_code(&mut app);
-        // let name = "LOTTERY";
-        // let symbol = "LOTTER";
-        // let unit_price = 100;
-        // let period = "hour";
-        // let selection = WinnerSelection::Jackpot {};
-        // let max_players = 3;
-        // let label = "Lottery label";
-        // let contract = code_id
-        //     .instantiate(
-        //         &mut app,
-        //         owner(),
-        //         name,
-        //         symbol,
-        //         unit_price,
-        //         period,
-        //         selection,
-        //         max_players,
-        //         label,
-        //     )
-        //     .unwrap();
+    fn platform_instantiate_should_works() {
+        let mut app = App::default();
+        let code_id = PlatformCodeId::store_code(&mut app);
+        let name = "PLATFORM";
 
-        // // check winner
-        // let winner = contract.winner(&app).unwrap();
-        // assert_eq!(winner.winner, vec![]);
+        let label = "Lottery label";
+        let contract = code_id.instantiate(&mut app, owner(), name, label).unwrap();
 
-        // // check owner
-        // let contract_owner = contract.owner(&app).unwrap();
-        // assert_eq!(contract_owner.owner, owner());
+        // check owner
+        let contract_owner = contract.owner(&app).unwrap();
+        assert_eq!(contract_owner.owner, owner());
 
-        // // check state
-        // let state = contract.query_state(&app).unwrap().state;
-        // assert_eq!(state.name, "LOTTERY");
-        // assert_eq!(state.unit_price, Uint128::new(100));
-        // assert_eq!(state.max_players, 3);
-        // assert_eq!(state.status, GameStatus::Activing);
-        // assert_eq!(state.player_count, 0);
-        // assert_eq!(state.selection, WinnerSelection::Jackpot {});
+        // check state
+        let state = contract.query_state(&app).unwrap().state;
+        assert_eq!(state.name, "PLATFORM");
+        assert_eq!(state.lotteries_count, 0);
+        assert_eq!(state.players_count, 0);
 
-        // // check is joined
-        // let is_joined = contract.players(&app, owner().as_str()).unwrap();
-        // assert!(is_joined.info.is_none());
+        // check balances
+        let balances = PlatformContract::query_balances(&app, contract.addr()).unwrap();
+        assert!(balances.is_empty());
+
+        // check players
+        let players = contract.players(&app).unwrap();
+        assert!(players.players.is_empty());
     }
 
     #[test]

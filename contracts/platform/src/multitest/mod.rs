@@ -3,7 +3,7 @@ mod tests;
 
 use anyhow::Result as AnyResult;
 
-use cosmwasm_std::{Addr, Coin, StdResult, Uint128};
+use cosmwasm_std::{Addr, Coin, StdResult};
 use cw_multi_test::{App, AppResponse, ContractWrapper, Executor};
 
 use crate::{
@@ -12,9 +12,9 @@ use crate::{
 };
 
 #[derive(Clone, Debug, Copy)]
-pub struct LotteryCodeId(u64);
+pub struct PlatformCodeId(u64);
 
-impl LotteryCodeId {
+impl PlatformCodeId {
     pub fn store_code(app: &mut App) -> Self {
         let contract = ContractWrapper::new(execute, instantiate, query).with_reply(reply);
         let code_id = app.store_code(Box::new(contract));
@@ -28,22 +28,22 @@ impl LotteryCodeId {
         sender: Addr,
         name: &str,
         label: &str,
-    ) -> AnyResult<LotteryContract> {
-        LotteryContract::instantiate(app, self, sender, name, label)
+    ) -> AnyResult<PlatformContract> {
+        PlatformContract::instantiate(app, self, sender, name, label)
     }
 }
 
-impl From<LotteryCodeId> for u64 {
-    fn from(code_id: LotteryCodeId) -> Self {
+impl From<PlatformCodeId> for u64 {
+    fn from(code_id: PlatformCodeId) -> Self {
         code_id.0
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct LotteryContract(Addr);
+pub struct PlatformContract(Addr);
 
 // implement the contract real function, e.g. instantiate, functions in exec, query modules
-impl LotteryContract {
+impl PlatformContract {
     pub fn addr(&self) -> Addr {
         self.0.clone()
     }
@@ -52,10 +52,9 @@ impl LotteryContract {
     #[track_caller]
     pub fn instantiate(
         app: &mut App,
-        code_id: LotteryCodeId,
+        code_id: PlatformCodeId,
         sender: Addr,
         name: &str,
-
         label: &str,
     ) -> AnyResult<Self> {
         let init_msg = InstantiateMsg::new(name);
@@ -72,7 +71,7 @@ impl LotteryContract {
     }
 
     #[track_caller]
-    pub fn buy(
+    pub fn buy_lottery(
         &self,
         app: &mut App,
         sender: Addr,
@@ -124,13 +123,13 @@ impl LotteryContract {
             .query_wasm_smart(self.addr(), &QueryMsg::CurrentState {})
     }
 
-    pub fn players(&self, app: &App, address: &str) -> StdResult<PlayersResp> {
+    pub fn players(&self, app: &App) -> StdResult<PlayersResp> {
         app.wrap()
             .query_wasm_smart(self.addr(), &QueryMsg::Players {})
     }
 }
 
-impl From<Addr> for LotteryContract {
+impl From<Addr> for PlatformContract {
     fn from(value: Addr) -> Self {
         Self(value)
     }
