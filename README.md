@@ -23,31 +23,31 @@ This is a game about Staking - Lottery, where anyone can stake any asset to earn
 
 ## Use Cases
 
-### Create Smart Wallet (Smallet)
-
-Users can create a smart contract wallet called "Smallet," which serves as a container for all their assets.
-
-### Buy `Lottery` (Betting)
+### Buy `Lottery` ticket
 
 Users can buy tickets for the corresponding lottery from the "Lottery" list. Once the deadline for a "Lottery" is reached, no further bets can be placed. Upon successful betting, users will receive an NFT for the current round.
 
 ### Draw `Lottery` 
 
-`LoDAO` will conduct the draw for each round at 22:00 on the day of the deadline. The winner will be randomly selected from the buyers
+`Platform` will conduct the draw for each round at 22:00 on the day of the deadline. The winner will be randomly selected from the buyers
 
 ### Claim `Lottery` 
 
-After the `Lottery` draw, the winner can claim the prize for the current round. If the user hasn't created the smart contract wallet `Smallet`, they will be prompted to do so. If the user chooses to create `Smallet`, they can receive the "Lottery" into it; otherwise, it will be received in the current account.
+After the `Lottery` draw, the winner can claim the prize for the current round. User can withdraw funds from `Lottery` contract and transfer it to another.
 
-### Send `Lottery` 
+### Withdraw `Lottery` funds 
+
+The winner of `Lottery` can withdraw the funds in `Lottery`
+
+### Transfer `Lottery` 
 
 The NFT voucher for purchasing `Lottery` and the winning `Lottery` can be traded.
 
 ### Query `Lottery` 
 
-The `Lottery`` list is categorized as DAY, MONTH, and YEAR. It can be filtered to show whether the draw has been conducted.
+The `Lottery` list is categorized as DAY, MONTH, and YEAR. It can be filtered to show whether the draw has been conducted.
 
-Users can query the betting situation for a specific `Lottery`,including the total prize amount, the number of participants, and the winner (if `Lottery` has already drawed).
+Users can query the play situation for a specific `Lottery`,including the total prize amount, the number of participants, and the winner (if `Lottery` has already drawed).
 
 ## Architecture Diagram
 
