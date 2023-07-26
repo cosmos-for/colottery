@@ -10,7 +10,7 @@ pub enum ExecuteMsg {
     DrawLottery {
         // lottery: String,
     },
-    CliamLottery {},
+    ClaimLottery {},
     WithdrawFunds {
         amount: u128,
         denom: String,

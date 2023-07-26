@@ -49,23 +49,23 @@ pub fn execute(
     use ExecuteMsg::*;
 
     match msg {
-        BuyTicket { denom, memo } => buy_ticket(deps, env, info, &denom, memo),
-        DrawLottery {} => draw_lottery(deps, env, info),
-        CliamLottery {} => claim_lottery(deps, info),
+        BuyTicket { denom, memo } => buy_ticket(deps, &env, &info, &denom, memo),
+        DrawLottery {} => draw_lottery(deps, &env, &info),
+        ClaimLottery {} => claim_lottery(deps, &info),
         WithdrawFunds {
             amount,
             denom,
             recipient,
-        } => withdraw(deps, env, info, amount, denom.as_str(), recipient),
-        Transfer { recipient } => transfer(deps, env, info, recipient),
+        } => withdraw(deps, &env, &info, amount, denom.as_str(), recipient),
+        Transfer { recipient } => transfer(deps, &env, &info, recipient),
     }
 }
 
 #[allow(clippy::too_many_arguments)]
 pub fn buy_ticket(
     deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
+    env: &Env,
+    info: &MessageInfo,
     denom: &str,
     memo: Option<String>,
 ) -> Result<Response, ContractError> {
@@ -76,7 +76,7 @@ pub fn buy_ticket(
         });
     }
 
-    let amount = must_pay(&info, denom)?;
+    let amount = must_pay(info, denom)?;
 
     let mut state = STATE.load(deps.storage)?;
 
@@ -86,7 +86,7 @@ pub fn buy_ticket(
 
     let lottery_height = state.height;
 
-    let contract_addr = env.contract.address;
+    let contract_addr = &env.contract.address;
     let current_height = env.block.height;
 
     // Only can buy lottery after created block height
@@ -104,18 +104,18 @@ pub fn buy_ticket(
     // Can't buy lottery after lottery is already closed
     if state.is_closed() {
         return Err(ContractError::LotteryAlreadyClosed {
-            address: contract_addr,
+            address: contract_addr.to_owned(),
         });
     }
 
-    let sender = info.sender;
-    let player = PLAYERS.may_load(deps.storage, &sender)?;
+    let sender = &info.sender;
+    let player = PLAYERS.may_load(deps.storage, sender)?;
 
     // Only can buy lottery once
     match player {
         Some(_) => Err(ContractError::LotteryCanBuyOnce {
-            player: sender,
-            lottery: contract_addr,
+            player: sender.clone(),
+            lottery: contract_addr.to_owned(),
         }),
         None => {
             state.player_count += 1;
@@ -123,9 +123,10 @@ pub fn buy_ticket(
 
             PLAYERS.save(
                 deps.storage,
-                &sender,
+                sender,
                 &PlayerInfo {
-                    address: sender.clone(),
+                    player_addr: sender.clone(),
+                    lottery_addr: env.contract.address.clone(),
                     height: current_height,
                     buy_at: current_height,
                     memo,
@@ -145,8 +146,12 @@ pub fn buy_ticket(
     }
 }
 
-pub fn draw_lottery(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
-    let sender = info.sender;
+pub fn draw_lottery(
+    deps: DepsMut,
+    env: &Env,
+    info: &MessageInfo,
+) -> Result<Response, ContractError> {
+    let sender = &info.sender;
 
     let mut state = STATE.load(deps.storage)?;
 
@@ -158,7 +163,7 @@ pub fn draw_lottery(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Respon
 
     if state.is_closed() {
         return Err(ContractError::LotteryAlreadyClosed {
-            address: env.contract.address,
+            address: env.contract.address.to_owned(),
         });
     }
 
@@ -180,9 +185,9 @@ pub fn draw_lottery(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Respon
     } else {
         let balances = deps
             .querier
-            .query_balance(env.contract.address, ARCH_DEMON)?;
+            .query_balance(&env.contract.address, ARCH_DEMON)?;
         let winner_info = WinnerInfo {
-            address: winner.first().as_ref().unwrap().address.clone(),
+            address: winner.first().as_ref().unwrap().player_addr.clone(),
             prize: vec![balances],
         };
         state.winner.push(winner_info);
@@ -202,7 +207,7 @@ pub fn draw_lottery(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Respon
     Ok(Response::new().add_attributes(attributes))
 }
 
-pub fn claim_lottery(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
+pub fn claim_lottery(deps: DepsMut, info: &MessageInfo) -> Result<Response, ContractError> {
     let sender = &info.sender;
     let state = STATE.load(deps.storage)?;
 
@@ -223,11 +228,11 @@ pub fn claim_lottery(deps: DepsMut, info: MessageInfo) -> Result<Response, Contr
 
 pub fn transfer(
     deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
+    env: &Env,
+    info: &MessageInfo,
     recipient: String,
 ) -> Result<Response, ContractError> {
-    let sender = info.sender;
+    let sender = &info.sender;
     let owner = OWNER.load(deps.storage)?;
 
     if sender != owner {
@@ -251,13 +256,13 @@ pub fn transfer(
 
 pub fn withdraw(
     deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
+    env: &Env,
+    info: &MessageInfo,
     amount: u128,
     denom: &str,
     recipient: Option<String>,
 ) -> Result<Response, ContractError> {
-    let sender = info.sender;
+    let sender = &info.sender;
 
     let owner = OWNER.load(deps.storage)?;
 
@@ -265,7 +270,7 @@ pub fn withdraw(
         return Err(ContractError::Unauthorized {});
     }
 
-    let balance = deps.querier.query_balance(env.contract.address, denom)?;
+    let balance = deps.querier.query_balance(&env.contract.address, denom)?;
     if balance.amount.u128() < amount {
         return Err(ContractError::BalanceTooSmall { balance });
     }

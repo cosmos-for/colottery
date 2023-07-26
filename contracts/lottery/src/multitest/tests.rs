@@ -127,7 +127,7 @@ mod test {
             .info
             .unwrap();
 
-        assert_eq!(resp.address, alice());
+        assert_eq!(resp.player_addr, alice());
         assert_eq!(resp.memo, Some("恭喜发财!".to_string()));
 
         // draw lottery
