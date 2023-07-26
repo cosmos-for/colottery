@@ -2,13 +2,15 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Coin};
 use lottery::state::PlayerInfo;
 
-use crate::state::State;
+use crate::state::{LotteryInfo, State};
 
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    #[returns(PlayersResp)]
-    Players {},
+    // #[returns(PlayersResp)]
+    // Players {},
+    #[returns(LotteriesResp)]
+    Lotteries {},
     #[returns(BalancesResp)]
     Balances {},
     #[returns(OwnerResp)]
@@ -21,11 +23,6 @@ pub enum QueryMsg {
 pub struct BalancesResp {
     pub amount: Coin,
 }
-
-// #[cw_serde]
-// pub struct InstantiationData {
-//     pub addr: Addr,
-// }
 
 #[cw_serde]
 pub struct CurrentStateResp {
@@ -40,4 +37,9 @@ pub struct OwnerResp {
 #[cw_serde]
 pub struct PlayersResp {
     pub players: Vec<PlayerInfo>,
+}
+
+#[cw_serde]
+pub struct LotteriesResp {
+    pub lotteries: Vec<LotteryInfo>,
 }

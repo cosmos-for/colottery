@@ -1,20 +1,51 @@
-use cosmwasm_std::{DepsMut, Env, Reply, Response};
+use cosmwasm_std::{attr, to_binary, DepsMut, Env, Reply, Response, StdError, SubMsgResponse};
+use cw_utils::parse_instantiate_response_data;
 
-use crate::ContractError;
+use crate::{
+    msg::InstantiationData,
+    state::{LOTTERIES, PENDING_LOTTERY, STATE},
+    ContractError,
+};
 
-pub fn reply(_deps: DepsMut, _env: Env, _reply: Reply) -> Result<Response, ContractError> {
-    // match reply.id {
-    //     INITIAL_LOTTERY_INSTANTIATION_REPLY_ID => reply::initial_lottery_instantiated(
-    //         deps,
-    //         env,
-    //         reply.result.into_result(),
-    //         LOTTERIES,
-    //         CONFIG,
-    //         LATEST_LOTTERY,
-    //     ),
-    //     CLOSE_LOTTERY_REPLY_ID => reply::closed_lottery(deps, env, reply.result.into_result()),
-    //     id => Err(ContractError::UnRecognizedReplyIdErr { id }),
-    // }
+use super::CREATE_LOTTERY_REPLY_ID;
 
-    Ok(Response::new())
+pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, ContractError> {
+    match reply.id {
+        CREATE_LOTTERY_REPLY_ID => {
+            initial_lottery_instantiated(deps, env, reply.result.into_result())
+        }
+        id => Err(ContractError::UnRecognizedReplyId { id }),
+    }
+}
+
+pub fn initial_lottery_instantiated(
+    deps: DepsMut,
+    _env: Env,
+    reply: Result<SubMsgResponse, String>,
+) -> Result<Response, ContractError> {
+    // Parse data from reply
+    let resp = reply.map_err(StdError::generic_err)?;
+    let data = resp.data.ok_or(ContractError::DataMissing {})?;
+    let resp = parse_instantiate_response_data(&data)?;
+
+    let lottery_addr = &deps.api.addr_validate(&resp.contract_address)?;
+
+    let mut lottery = PENDING_LOTTERY.load(deps.storage)?;
+    lottery.contract_addr = lottery_addr.to_owned();
+
+    LOTTERIES.save(deps.storage, lottery_addr, &lottery)?;
+
+    STATE.update(deps.storage, |mut state| -> Result<_, ContractError> {
+        state.lotteries_count += 1;
+        Ok(state)
+    })?;
+
+    let attrs = vec![attr("action", "reply_create_lottery")];
+
+    let data = InstantiationData {
+        addr: lottery_addr.to_owned(),
+    };
+    let data = to_binary(&data)?;
+
+    Ok(Response::new().add_attributes(attrs).set_data(data))
 }

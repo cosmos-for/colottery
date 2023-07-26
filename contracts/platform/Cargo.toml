@@ -53,4 +53,4 @@ lottery = { path = "../lottery", version = "1.0.0" }
 [dev-dependencies]
 anyhow = { workspace = true }
 cw-multi-test = { workspace = true }
-
+lottery = { path = "../lottery", features = ["mt"]}

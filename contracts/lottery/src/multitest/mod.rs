@@ -83,7 +83,7 @@ impl LotteryContract {
             name,
             symbol,
             Uint128::new(unit_price),
-            period.into(),
+            period,
             selection,
             max_bettors,
         );
@@ -100,7 +100,7 @@ impl LotteryContract {
     }
 
     #[track_caller]
-    pub fn buy(
+    pub fn buy_ticket(
         &self,
         app: &mut App,
         sender: Addr,

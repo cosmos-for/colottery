@@ -3,8 +3,10 @@ mod tests;
 
 use anyhow::Result as AnyResult;
 
-use cosmwasm_std::{Addr, Coin, StdResult, Uint128};
+use cosmwasm_std::{from_binary, Addr, Coin, StdResult, Uint128};
 use cw_multi_test::{App, AppResponse, ContractWrapper, Executor};
+use cw_utils::parse_execute_response_data;
+use lottery::state::WinnerSelection;
 
 use crate::{
     contract::{execute, instantiate, query, reply},
@@ -12,9 +14,9 @@ use crate::{
 };
 
 #[derive(Clone, Debug, Copy)]
-pub struct LotteryCodeId(u64);
+pub struct PlatformCodeId(u64);
 
-impl LotteryCodeId {
+impl PlatformCodeId {
     pub fn store_code(app: &mut App) -> Self {
         let contract = ContractWrapper::new(execute, instantiate, query).with_reply(reply);
         let code_id = app.store_code(Box::new(contract));
@@ -27,23 +29,24 @@ impl LotteryCodeId {
         app: &mut App,
         sender: Addr,
         name: &str,
+        lottery_code_id: u64,
         label: &str,
-    ) -> AnyResult<LotteryContract> {
-        LotteryContract::instantiate(app, self, sender, name, label)
+    ) -> AnyResult<PlatformContract> {
+        PlatformContract::instantiate(app, self, sender, name, lottery_code_id, label)
     }
 }
 
-impl From<LotteryCodeId> for u64 {
-    fn from(code_id: LotteryCodeId) -> Self {
+impl From<PlatformCodeId> for u64 {
+    fn from(code_id: PlatformCodeId) -> Self {
         code_id.0
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct LotteryContract(Addr);
+pub struct PlatformContract(Addr);
 
 // implement the contract real function, e.g. instantiate, functions in exec, query modules
-impl LotteryContract {
+impl PlatformContract {
     pub fn addr(&self) -> Addr {
         self.0.clone()
     }
@@ -52,13 +55,13 @@ impl LotteryContract {
     #[track_caller]
     pub fn instantiate(
         app: &mut App,
-        code_id: LotteryCodeId,
+        code_id: PlatformCodeId,
         sender: Addr,
         name: &str,
-
+        lottery_code_id: u64,
         label: &str,
     ) -> AnyResult<Self> {
-        let init_msg = InstantiateMsg::new(name);
+        let init_msg = InstantiateMsg::new(name, lottery_code_id);
 
         app.instantiate_contract(
             code_id.0,
@@ -71,27 +74,72 @@ impl LotteryContract {
         .map(Self::from)
     }
 
+    #[allow(clippy::too_many_arguments)]
     #[track_caller]
-    pub fn buy(
+    pub fn create_lottery(
         &self,
         app: &mut App,
         sender: Addr,
-        lottery: &str,
-        denom: &str,
-        memo: Option<String>,
-        funds: &[Coin],
-    ) -> AnyResult<AppResponse> {
-        app.execute_contract(
-            sender,
-            self.addr(),
-            &ExecuteMsg::BuyTicket {
-                lottery: lottery.into(),
-                denom: denom.into(),
-                memo,
-            },
-            funds,
-        )
+        name: &str,
+        symobl: &str,
+        unit_price: Uint128,
+        period: &str,
+        selection: WinnerSelection,
+        max_players: u32,
+        label: &str,
+    ) -> AnyResult<Option<InstantiationData>> {
+        let msg = ExecuteMsg::CreateLottery {
+            name: name.into(),
+            symobl: symobl.into(),
+            unit_price,
+            period: period.into(),
+            selection,
+            max_players,
+            label: label.into(),
+        };
+
+        let resp = app
+            .execute_contract(sender, self.addr(), &msg, &[])
+            .unwrap();
+
+        // println!("execute create lottery resp:{:?}", resp);
+
+        // let data = parse_instantiate_response_data(resp.data.unwrap_or_default().as_slice())?;
+        // let data = parse_execute_response_data(&resp.data.unwrap()).unwrap();
+        // let data: Option<InstantiationData> = from_binary(&data.data.unwrap_or_default())?;
+
+        // Ok(data)
+
+        resp.data
+            .map(|data| parse_execute_response_data(&data))
+            .transpose()?
+            .and_then(|data| data.data)
+            .map(|data| from_binary(&data))
+            .transpose()
+            .map_err(Into::into)
     }
+
+    // #[track_caller]
+    // pub fn buy_lottery(
+    //     &self,
+    //     app: &mut App,
+    //     sender: Addr,
+    //     lottery: &str,
+    //     denom: &str,
+    //     memo: Option<String>,
+    //     funds: &[Coin],
+    // ) -> AnyResult<AppResponse> {
+    //     app.execute_contract(
+    //         sender,
+    //         self.addr(),
+    //         &ExecuteMsg::BuyLottery {
+    //             lottery: lottery.into(),
+    //             denom: denom.into(),
+    //             memo,
+    //         },
+    //         funds,
+    //     )
+    // }
 
     #[track_caller]
     pub fn draw_lottery(
@@ -110,6 +158,10 @@ impl LotteryContract {
         )
     }
 
+    pub fn lotteries(&self, app: &App) -> StdResult<LotteriesResp> {
+        app.wrap()
+            .query_wasm_smart(self.addr(), &QueryMsg::Lotteries {})
+    }
     pub fn owner(&self, app: &App) -> StdResult<OwnerResp> {
         app.wrap()
             .query_wasm_smart(self.addr(), &QueryMsg::Owner {})
@@ -124,13 +176,13 @@ impl LotteryContract {
             .query_wasm_smart(self.addr(), &QueryMsg::CurrentState {})
     }
 
-    pub fn players(&self, app: &App, address: &str) -> StdResult<PlayersResp> {
-        app.wrap()
-            .query_wasm_smart(self.addr(), &QueryMsg::Players {})
-    }
+    // pub fn players(&self, app: &App) -> StdResult<PlayersResp> {
+    //     app.wrap()
+    //         .query_wasm_smart(self.addr(), &QueryMsg::Players {})
+    // }
 }
 
-impl From<Addr> for LotteryContract {
+impl From<Addr> for PlatformContract {
     fn from(value: Addr) -> Self {
         Self(value)
     }
