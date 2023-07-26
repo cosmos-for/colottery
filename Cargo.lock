@@ -767,7 +767,6 @@ version = "1.0.0"
 dependencies = [
  "anyhow",
  "chrono",
- "common",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",
@@ -821,7 +820,6 @@ version = "1.0.0"
 dependencies = [
  "anyhow",
  "chrono",
- "common",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",
