@@ -8,7 +8,7 @@ use lottery::state::WinnerSelection;
 use crate::state::{LotteryInfo, LOTTERIES, PENDING_LOTTERY};
 use crate::{
     msg::ExecuteMsg,
-    state::{OWNER, PLAYERS, STATE},
+    state::{OWNER, STATE},
     ContractError,
 };
 
@@ -96,6 +96,7 @@ pub fn create_lottery(
         unit_price,
         period: period.parse()?,
         selection,
+        max_players,
         contract_addr: Addr::unchecked(""), // update by reply
     };
 

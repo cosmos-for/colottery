@@ -3,8 +3,9 @@ mod tests;
 
 use anyhow::Result as AnyResult;
 
-use cosmwasm_std::{Addr, Coin, StdResult};
+use cosmwasm_std::{Addr, Coin, StdResult, Uint128};
 use cw_multi_test::{App, AppResponse, ContractWrapper, Executor};
+use lottery::state::WinnerSelection;
 
 use crate::{
     contract::{execute, instantiate, query, reply},
@@ -72,16 +73,30 @@ impl PlatformContract {
         .map(Self::from)
     }
 
+    #[allow(clippy::too_many_arguments)]
     #[track_caller]
     pub fn create_lottery(
+        &self,
         app: &mut App,
-        code_id: PlatformCodeId,
         sender: Addr,
         name: &str,
-        lottery_code_id: u64,
+        symobl: &str,
+        unit_price: Uint128,
+        period: &str,
+        selection: WinnerSelection,
+        max_players: u32,
         label: &str,
     ) -> AnyResult<AppResponse> {
-        todo!()
+        let msg = ExecuteMsg::CreateLottery {
+            name: name.into(),
+            symobl: symobl.into(),
+            unit_price,
+            period: period.into(),
+            selection,
+            max_players,
+            label: label.into(),
+        };
+        app.execute_contract(sender, self.addr(), &msg, &[])
     }
 
     #[track_caller]
@@ -123,6 +138,10 @@ impl PlatformContract {
         )
     }
 
+    pub fn lotteries(&self, app: &App) -> StdResult<LotteriesResp> {
+        app.wrap()
+            .query_wasm_smart(self.addr(), &QueryMsg::Lotteries {})
+    }
     pub fn owner(&self, app: &App) -> StdResult<OwnerResp> {
         app.wrap()
             .query_wasm_smart(self.addr(), &QueryMsg::Owner {})
@@ -137,10 +156,10 @@ impl PlatformContract {
             .query_wasm_smart(self.addr(), &QueryMsg::CurrentState {})
     }
 
-    pub fn players(&self, app: &App) -> StdResult<PlayersResp> {
-        app.wrap()
-            .query_wasm_smart(self.addr(), &QueryMsg::Players {})
-    }
+    // pub fn players(&self, app: &App) -> StdResult<PlayersResp> {
+    //     app.wrap()
+    //         .query_wasm_smart(self.addr(), &QueryMsg::Players {})
+    // }
 }
 
 impl From<Addr> for PlatformContract {

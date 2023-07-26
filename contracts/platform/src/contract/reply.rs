@@ -2,7 +2,7 @@ use cosmwasm_std::{attr, DepsMut, Env, Reply, Response, StdError, SubMsgResponse
 use cw_utils::parse_instantiate_response_data;
 
 use crate::{
-    state::{LOTTERIES, PENDING_LOTTERY},
+    state::{LOTTERIES, PENDING_LOTTERY, STATE},
     ContractError,
 };
 
@@ -34,6 +34,11 @@ pub fn initial_lottery_instantiated(
     lottery.contract_addr = lottery_addr.to_owned();
 
     LOTTERIES.save(deps.storage, lottery_addr, &lottery)?;
+
+    STATE.update(deps.storage, |mut state| -> Result<_, ContractError> {
+        state.lotteries_count += 1;
+        Ok(state)
+    })?;
 
     let attrs = vec![attr("action", "reply_create_lottery")];
 

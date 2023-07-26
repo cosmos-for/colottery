@@ -2,7 +2,10 @@
 mod test {
     use cosmwasm_std::{coins, Uint128};
     use cw_multi_test::App;
-    use lottery::multitest::LotteryCodeId;
+    use lottery::{
+        multitest::LotteryCodeId,
+        state::{LotteryPeriod, WinnerSelection},
+    };
 
     use crate::{
         multitest::{alice, bob, owner, PlatformCodeId, PlatformContract},
@@ -28,15 +31,60 @@ mod test {
         let state = contract.query_state(&app).unwrap().state;
         assert_eq!(state.name, "PLATFORM");
         assert_eq!(state.lotteries_count, 0);
-        assert_eq!(state.players_count, 0);
+        // assert_eq!(state.players_count, 0);
 
         // check balances
         let balances = PlatformContract::query_balances(&app, contract.addr()).unwrap();
         assert!(balances.is_empty());
+    }
 
-        // check players
-        let players = contract.players(&app).unwrap();
-        assert!(players.players.is_empty());
+    #[test]
+    fn platform_create_lottery_should_works() {
+        let mut app = App::default();
+        let code_id = PlatformCodeId::store_code(&mut app);
+        let lottery_code_id = LotteryCodeId::store_code(&mut app);
+        let name = "PLATFORM";
+        let label = "Lottery label";
+        let contract = code_id
+            .instantiate(&mut app, owner(), name, lottery_code_id.into(), label)
+            .unwrap();
+
+        let name = "LOTTERY";
+        let symbol = "LOTTER";
+        let unit_price = Uint128::new(100);
+        let period = "hour";
+        let selection = WinnerSelection::Jackpot {};
+        let max_players = 3;
+        let label = "Lottery label";
+
+        contract
+            .create_lottery(
+                &mut app,
+                owner(),
+                name,
+                symbol,
+                unit_price,
+                period,
+                selection,
+                max_players,
+                label,
+            )
+            .unwrap();
+
+        let state = contract.query_state(&app).unwrap().state;
+        assert_eq!(state.lotteries_count, 1);
+        // assert_eq!(state.players_count, 0);
+
+        let lotteries = contract.lotteries(&app).unwrap();
+        assert_eq!(lotteries.lotteries.len(), 1);
+
+        let lottery = &lotteries.lotteries[0];
+        assert_eq!(lottery.name, name);
+        assert_eq!(lottery.symbol, symbol);
+        assert_eq!(lottery.unit_price, unit_price);
+        assert_eq!(lottery.period, LotteryPeriod::Hour {});
+        assert_eq!(lottery.selection, WinnerSelection::Jackpot {});
+        assert_eq!(lottery.max_players, max_players);
     }
 
     #[test]
