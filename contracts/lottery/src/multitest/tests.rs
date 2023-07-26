@@ -57,7 +57,7 @@ mod test {
     }
 
     #[test]
-    fn buy_lottery_should_works() {
+    fn lottery_full_flows_should_works() {
         let mut app = App::new(|router, _api, storage| {
             router
                 .bank
@@ -93,7 +93,7 @@ mod test {
 
         // Buy ticket
         contract
-            .buy(
+            .buy_ticket(
                 &mut app,
                 alice(),
                 ARCH_DEMON,
@@ -103,7 +103,7 @@ mod test {
             .unwrap();
 
         contract
-            .buy(
+            .buy_ticket(
                 &mut app,
                 bob(),
                 ARCH_DEMON,
@@ -201,7 +201,7 @@ mod test {
 
         // Buy ticket
         contract
-            .buy(
+            .buy_ticket(
                 &mut app,
                 alice(),
                 ARCH_DEMON,
@@ -212,57 +212,5 @@ mod test {
 
         let err = contract.draw_lottery(&mut app, alice()).unwrap_err();
         assert_eq!(ContractError::Unauthorized {}, err.downcast().unwrap())
-    }
-
-    #[test]
-    fn withdraw_lottery_should_works() {
-        // let mut app = App::new(|router, _api, storage| {
-        //     router
-        //         .bank
-        //         .init_balance(storage, &owner(), coins(3000, NATIVE_DENOM))
-        //         .unwrap();
-        //     router
-        //         .bank
-        //         .init_balance(storage, &alice(), coins(1000, NATIVE_DENOM))
-        //         .unwrap();
-        // });
-
-        // let code_id = LotteryCodeId::store_code(&mut app);
-        // let title = "lottery title";
-        // let contract = code_id
-        //     .instantiate(&mut app, owner(), title, "lottery test")
-        //     .unwrap();
-
-        // contract
-        //     .buy(
-        //         &mut app,
-        //         alice(),
-        //         NATIVE_DENOM,
-        //         Some("恭喜发财!".to_string()),
-        //         &coins(100, NATIVE_DENOM),
-        //     )
-        //     .unwrap();
-        // let resp = contract.bettor_count(&app, alice().as_str()).unwrap();
-        // let expected = BetInfo {
-        //     buy_at: 12345,
-        //     memo: Some("恭喜发财!".to_string()),
-        // };
-        // assert_eq!(resp.info, Some(expected));
-
-        // contract
-        //     .draw(&mut app, owner(), &coins(1000, NATIVE_DENOM))
-        //     .unwrap();
-        // contract
-        //     .withdraw(&mut app, alice(), 1000, NATIVE_DENOM)
-        //     .unwrap();
-
-        // let lottery_balance = LotteryContract::query_balances(&app, contract.addr()).unwrap();
-        // assert_eq!(lottery_balance, coins(100, NATIVE_DENOM));
-
-        // let alice_balance = LotteryContract::query_balances(&app, alice()).unwrap();
-        // assert_eq!(alice_balance, coins(1900, NATIVE_DENOM));
-
-        // let owner_balance = LotteryContract::query_balances(&app, owner()).unwrap();
-        // assert_eq!(owner_balance, coins(2000, NATIVE_DENOM));
     }
 }

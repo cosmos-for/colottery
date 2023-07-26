@@ -1,7 +1,7 @@
 use cosmwasm_std::{to_binary, Binary, Deps, Env, Order, StdResult};
 
 use crate::{
-    msg::{CurrentStateResp, LotteriesResp, OwnerResp, PlayersResp, QueryMsg},
+    msg::{CurrentStateResp, LotteriesResp, OwnerResp, QueryMsg},
     state::{LOTTERIES, OWNER, STATE},
 };
 

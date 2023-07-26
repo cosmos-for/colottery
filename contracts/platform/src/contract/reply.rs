@@ -1,19 +1,19 @@
-use cosmwasm_std::{attr, DepsMut, Env, Reply, Response, StdError, SubMsgResponse};
+use cosmwasm_std::{attr, to_binary, DepsMut, Env, Reply, Response, StdError, SubMsgResponse};
 use cw_utils::parse_instantiate_response_data;
 
 use crate::{
+    msg::InstantiationData,
     state::{LOTTERIES, PENDING_LOTTERY, STATE},
     ContractError,
 };
 
-use super::{CREATE_LOTTERY_REPLY_ID, DRAW_LOTTERY_REPLY_ID};
+use super::CREATE_LOTTERY_REPLY_ID;
 
 pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, ContractError> {
     match reply.id {
         CREATE_LOTTERY_REPLY_ID => {
             initial_lottery_instantiated(deps, env, reply.result.into_result())
         }
-        DRAW_LOTTERY_REPLY_ID => lottery_drawed(deps, env, reply.result.into_result()),
         id => Err(ContractError::UnRecognizedReplyId { id }),
     }
 }
@@ -42,13 +42,10 @@ pub fn initial_lottery_instantiated(
 
     let attrs = vec![attr("action", "reply_create_lottery")];
 
-    Ok(Response::new().add_attributes(attrs))
-}
+    let data = InstantiationData {
+        addr: lottery_addr.to_owned(),
+    };
+    let data = to_binary(&data)?;
 
-pub fn lottery_drawed(
-    deps: DepsMut,
-    env: Env,
-    reply: Result<SubMsgResponse, String>,
-) -> Result<Response, ContractError> {
-    Ok(Response::new())
+    Ok(Response::new().add_attributes(attrs).set_data(data))
 }

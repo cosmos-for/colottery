@@ -24,11 +24,6 @@ pub struct BalancesResp {
     pub amount: Coin,
 }
 
-// #[cw_serde]
-// pub struct InstantiationData {
-//     pub addr: Addr,
-// }
-
 #[cw_serde]
 pub struct CurrentStateResp {
     pub state: State,

@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{Addr, Uint128};
 use lottery::state::WinnerSelection;
 
 #[allow(clippy::large_enum_variant)]
@@ -14,12 +14,12 @@ pub enum ExecuteMsg {
         max_players: u32,
         label: String,
     },
-    BuyLottery {
-        lottery: String,
-        denom: String,
-        memo: Option<String>,
-    },
     DrawLottery {
         lottery: String,
     },
+}
+
+#[cw_serde]
+pub struct InstantiationData {
+    pub addr: Addr,
 }

@@ -1,11 +1,12 @@
 use cosmwasm_std::{
-    attr, to_binary, Addr, DepsMut, Env, MessageInfo, Response, SubMsg, Timestamp, Uint128, WasmMsg,
+    attr, to_binary, Addr, DepsMut, Env, MessageInfo, Response, SubMsg, Uint128, WasmMsg,
 };
 
+use lottery::msg::ExecuteMsg as LotteryExecuteMsg;
 use lottery::msg::InstantiateMsg as LotteryInstantiateMsg;
 use lottery::state::WinnerSelection;
 
-use crate::state::{LotteryInfo, LOTTERIES, PENDING_LOTTERY};
+use crate::state::{LotteryInfo, PENDING_LOTTERY};
 use crate::{
     msg::ExecuteMsg,
     state::{OWNER, STATE},
@@ -43,11 +44,7 @@ pub fn execute(
             max_players,
             &label,
         ),
-        BuyLottery {
-            lottery,
-            denom,
-            memo,
-        } => buy_lottery(deps, &env, &info, &lottery, &denom, memo),
+
         DrawLottery { lottery } => draw_lottery(deps, &env, &info, &lottery),
     }
 }
@@ -105,20 +102,29 @@ pub fn create_lottery(
     Ok(Response::new().add_submessage(msg).add_attributes(attrs))
 }
 
-pub fn buy_lottery(
-    deps: DepsMut,
-    env: &Env,
-    info: &MessageInfo,
-    lottery: &str,
-    denom: &str,
-    memo: Option<String>,
-) -> Result<Response, ContractError> {
-    Ok(Response::new())
-}
+// pub fn buy_lottery(
+//     _deps: DepsMut,
+//     _env: &Env,
+//     info: MessageInfo,
+//     lottery: &str,
+//     denom: &str,
+//     memo: Option<String>,
+// ) -> Result<Response, ContractError> {
+//     let buy_msg = LotteryExecuteMsg::BuyTicket { denom: denom.into(), memo };
+//     let msg = WasmMsg::Execute {
+//         contract_addr: lottery.to_string(),
+//         msg: to_binary(&buy_msg)?,
+//         funds: info.funds,
+//     };
+
+//     let attrs = vec![attr("action", "buy_lottery"), attr("sender", info.sender)];
+
+//     Ok(Response::new().add_message(msg).add_attributes(attrs))
+// }
 
 pub fn draw_lottery(
     deps: DepsMut,
-    env: &Env,
+    _env: &Env,
     info: &MessageInfo,
     lottery: &str,
 ) -> Result<Response, ContractError> {
@@ -130,5 +136,17 @@ pub fn draw_lottery(
         return Err(ContractError::Unauthorized {});
     }
 
-    Ok(Response::new())
+    let msg = LotteryExecuteMsg::DrawLottery {};
+    let msg = WasmMsg::Execute {
+        contract_addr: lottery.to_string(),
+        msg: to_binary(&msg)?,
+        funds: vec![],
+    };
+
+    let attrs = vec![
+        attr("action", "draw_lottery"),
+        attr("sender", info.sender.as_str()),
+    ];
+
+    Ok(Response::new().add_message(msg).add_attributes(attrs))
 }

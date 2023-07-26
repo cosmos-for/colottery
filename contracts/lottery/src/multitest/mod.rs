@@ -100,7 +100,7 @@ impl LotteryContract {
     }
 
     #[track_caller]
-    pub fn buy(
+    pub fn buy_ticket(
         &self,
         app: &mut App,
         sender: Addr,
