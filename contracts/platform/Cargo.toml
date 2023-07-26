@@ -48,7 +48,7 @@ anyhow = { workspace = true, optional = true }
 cw-multi-test = { workspace = true, optional = true }
 
 common = { path = "../../packages/common", version = "1.0.0" }
-lottery = { path = "../lottery", version = "1.0.0" }
+lottery = { path = "../lottery", version = "1.0.0", features = ["library"] }
 
 [dev-dependencies]
 anyhow = { workspace = true }

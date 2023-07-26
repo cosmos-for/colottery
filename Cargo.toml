@@ -11,9 +11,9 @@ cw-storage-plus = "1.1"
 cw-utils = "1.0"
 cw2 = "1.1"
 cw4 = "1.1"
-cw20-base = "1.1"
+cw20-base = { version = "1.1", features = ["library"] }
 cw20 = "1.1"
-cw721-base = "0.18"
+cw721-base = { version = "0.18", features = ["library"] }
 cw-controllers = "1.1"
 schemars = "0.8"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
