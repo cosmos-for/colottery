@@ -5,7 +5,6 @@ use anyhow::Result as AnyResult;
 
 use cosmwasm_std::{from_binary, Addr, Coin, StdResult};
 use cw_multi_test::{App, AppResponse, ContractWrapper, Executor};
-use cw_utils::parse_execute_response_data;
 use lottery::state::WinnerSelection;
 
 use crate::{
@@ -106,19 +105,9 @@ impl PlatformContract {
 
         // println!("execute create lottery resp:{:?}", resp);
 
-        // let data = parse_instantiate_response_data(resp.data.unwrap_or_default().as_slice())?;
-        // let data = parse_execute_response_data(&resp.data.unwrap()).unwrap();
-        // let data: Option<InstantiationData> = from_binary(&data.data.unwrap_or_default())?;
+        let data = from_binary(&resp.data.unwrap()).unwrap();
 
-        // Ok(data)
-
-        resp.data
-            .map(|data| parse_execute_response_data(&data))
-            .transpose()?
-            .and_then(|data| data.data)
-            .map(|data| from_binary(&data))
-            .transpose()
-            .map_err(Into::into)
+        Ok(data)
     }
 
     // #[track_caller]

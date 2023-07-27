@@ -58,26 +58,27 @@ mod test {
         let max_players = 3;
         let label = "Lottery label";
 
-        let resp = contract.create_lottery(
-            &mut app,
-            owner(),
-            name,
-            symbol,
-            unit_price_amount,
-            unit_price_denom,
-            period,
-            selection,
-            max_players,
-            label,
-        );
+        let resp = contract
+            .create_lottery(
+                &mut app,
+                owner(),
+                name,
+                symbol,
+                unit_price_amount,
+                unit_price_denom,
+                period,
+                selection,
+                max_players,
+                label,
+            )
+            .unwrap();
 
         println!("create lottery resp:{:?}", resp);
 
-        // let lottery_addr = resp.unwrap().addr;
+        let lottery_addr = resp.unwrap().addr;
 
         let state = contract.query_state(&app).unwrap().state;
         assert_eq!(state.lotteries_count, 1);
-        // assert_eq!(state.players_count, 0);
 
         let lotteries = contract.lotteries(&app).unwrap();
         assert_eq!(lotteries.lotteries.len(), 1);
@@ -92,7 +93,7 @@ mod test {
         assert_eq!(lottery.period, LotteryPeriod::Hour {});
         assert_eq!(lottery.selection, WinnerSelection::Jackpot {});
         assert_eq!(lottery.max_players, max_players);
-        // assert_eq!(lottery.contract_addr, lottery_addr);
+        assert_eq!(lottery.contract_addr, lottery_addr);
     }
 
     #[test]
@@ -125,24 +126,24 @@ mod test {
         let max_players = 3;
         let label = "Lottery label";
 
-        let resp = contract.create_lottery(
-            &mut app,
-            owner(),
-            name,
-            symbol,
-            unit_price_amount,
-            unit_price_denom,
-            period,
-            selection,
-            max_players,
-            label,
-        );
+        let resp = contract
+            .create_lottery(
+                &mut app,
+                owner(),
+                name,
+                symbol,
+                unit_price_amount,
+                unit_price_denom,
+                period,
+                selection,
+                max_players,
+                label,
+            )
+            .unwrap();
 
         println!("create lottery resp:{:?}", resp);
 
-        let lotteries = contract.lotteries(&app).unwrap();
-        let lottery = &lotteries.lotteries[0];
-        let lottery_addr = &lottery.contract_addr;
+        let lottery_addr = &resp.unwrap().addr;
         let lottery_contract: LotteryContract = lottery_addr.to_owned().into();
 
         // Buy ticket
