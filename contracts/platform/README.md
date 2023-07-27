@@ -86,6 +86,37 @@ git remote add origin YOUR-GIT-URL
 git push -u origin main
 ```
 
+## compile to WASM
+in the project directory, run the command:
+```sh
+cargo wasm
+```
+
+## optimizer the wasm
+```sh
+docker run --rm -v "$(pwd)":/code \
+  --mount type=volume,source="$(basename "$(pwd)")_cache",target=/target \
+  --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
+  cosmwasm/workspace-optimizer:0.13.0
+```
+
+## Deploy contract to Archway
+```sh
+# upload the contract wasm file, remember to change your local address
+archwayd tx wasm store artifacts/lottery.wasm --from dd --node https://rpc.constantine.archway.tech:443 --chain-id constantine-3 --gas 5000000 --fees 5000000000000000000aconst	
+# return tx hash : 5A5FA0ED74F9996B491E68C1D7BF60AA6E28481B8B7E40C765EE9223137B4F4B
+# then query the code id: 938 on https://testnet.mintscan.io/archway-testnet/txs/5A5FA0ED74F9996B491E68C1D7BF60AA6E28481B8B7E40C765EE9223137B4F4B
+
+archwayd tx wasm store artifacts/platform.wasm --from dd --node https://rpc.constantine.archway.tech:443 --chain-id constantine-3 --gas 5000000 --fees 5000000000000000000aconst
+
+# instantiate contract
+archwayd tx wasm instantiate 939 '{"name":"Fada Lottery", "lottery_code_id":938}' --from dd --node https://rpc.constantine.archway.tech:443 --chain-id constantine-3 --gas 5000000 --fees 5000000000000000000aconst --label testdev --admin archway1pzszxc78dc4k5zs6j3pnuw9w4vmfx276qjsl6n
+
+# return tx hash: 6361C71B70E3F20F7EF1B1252FB341942A19862E23D8711613BFCBB557616BC5 
+# and then find the contract address: archway1shq3m5hshsmdqujdj6urq33tl56y2t6v95x3f0ju5z46aqpm7wessmev0m
+# on https://testnet.mintscan.io/archway-testnet/txs/6361C71B70E3F20F7EF1B1252FB341942A19862E23D8711613BFCBB557616BC5
+```
+
 ## CI Support
 
 We have template configurations for both [GitHub Actions](.github/workflows/Basic.yml)
