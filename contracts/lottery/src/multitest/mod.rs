@@ -3,7 +3,7 @@ mod tests;
 
 use anyhow::Result as AnyResult;
 
-use cosmwasm_std::{Addr, Coin, StdResult, Uint128};
+use cosmwasm_std::{Addr, Coin, StdResult};
 use cw_multi_test::{App, AppResponse, ContractWrapper, Executor};
 
 use crate::{
@@ -29,7 +29,8 @@ impl LotteryCodeId {
         sender: Addr,
         name: &str,
         symbol: &str,
-        unit_price: u128,
+        unit_price_amount: u128,
+        unit_price_denom: &str,
         period: &str,
         selection: WinnerSelection,
         max_bettors: u32,
@@ -41,7 +42,8 @@ impl LotteryCodeId {
             sender,
             name,
             symbol,
-            unit_price,
+            unit_price_amount,
+            unit_price_denom,
             period,
             selection,
             max_bettors,
@@ -73,7 +75,8 @@ impl LotteryContract {
         sender: Addr,
         name: &str,
         symbol: &str,
-        unit_price: u128,
+        unit_price_amount: u128,
+        unit_price_denom: &str,
         period: &str,
         selection: WinnerSelection,
         max_bettors: u32,
@@ -82,7 +85,8 @@ impl LotteryContract {
         let init_msg = InstantiateMsg::new(
             name,
             symbol,
-            Uint128::new(unit_price),
+            unit_price_amount,
+            unit_price_denom,
             period,
             selection,
             max_bettors,

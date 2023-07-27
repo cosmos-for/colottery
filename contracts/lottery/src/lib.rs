@@ -19,7 +19,7 @@ pub type Cw721MetadataContract<'a> = cw721_base::Cw721Contract<'a, Extension, Em
 pub type ExecuteMsg = cw721_base::ExecuteMsg<Extension, Empty>;
 pub type QueryMsg = cw721_base::QueryMsg<Empty>;
 
-pub const ARCH_DEMON: &str = "ARCH";
+pub const ARCH_DEMON: &str = "aconst";
 pub const ARCH_DECIMALS: u8 = 18;
 
 pub fn support_coins() -> Vec<SupportCoin> {

@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_std::Addr;
 use lottery::state::WinnerSelection;
 
 #[allow(clippy::large_enum_variant)]
@@ -8,7 +8,8 @@ pub enum ExecuteMsg {
     CreateLottery {
         name: String,
         symobl: String,
-        unit_price: Uint128,
+        unit_price_amount: u128,
+        unit_price_denom: String,
         period: String,
         selection: WinnerSelection,
         max_players: u32,

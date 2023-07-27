@@ -3,7 +3,7 @@ mod tests;
 
 use anyhow::Result as AnyResult;
 
-use cosmwasm_std::{from_binary, Addr, Coin, StdResult, Uint128};
+use cosmwasm_std::{from_binary, Addr, Coin, StdResult};
 use cw_multi_test::{App, AppResponse, ContractWrapper, Executor};
 use cw_utils::parse_execute_response_data;
 use lottery::state::WinnerSelection;
@@ -82,7 +82,8 @@ impl PlatformContract {
         sender: Addr,
         name: &str,
         symobl: &str,
-        unit_price: Uint128,
+        unit_price_amount: u128,
+        unit_price_denom: &str,
         period: &str,
         selection: WinnerSelection,
         max_players: u32,
@@ -91,7 +92,8 @@ impl PlatformContract {
         let msg = ExecuteMsg::CreateLottery {
             name: name.into(),
             symobl: symobl.into(),
-            unit_price,
+            unit_price_amount,
+            unit_price_denom: unit_price_denom.into(),
             period: period.into(),
             selection,
             max_players,

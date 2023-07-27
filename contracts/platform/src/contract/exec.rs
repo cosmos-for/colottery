@@ -1,6 +1,5 @@
-use cosmwasm_std::{
-    attr, to_binary, Addr, DepsMut, Env, MessageInfo, Response, SubMsg, Uint128, WasmMsg,
-};
+use cosmwasm_std::coin;
+use cosmwasm_std::{attr, to_binary, Addr, DepsMut, Env, MessageInfo, Response, SubMsg, WasmMsg};
 
 use lottery::msg::ExecuteMsg as LotteryExecuteMsg;
 use lottery::msg::InstantiateMsg as LotteryInstantiateMsg;
@@ -27,7 +26,8 @@ pub fn execute(
         CreateLottery {
             name,
             symobl,
-            unit_price,
+            unit_price_amount,
+            unit_price_denom,
             period,
             selection,
             max_players,
@@ -38,7 +38,8 @@ pub fn execute(
             &info,
             &name,
             &symobl,
-            unit_price,
+            unit_price_amount,
+            &unit_price_denom,
             &period,
             selection,
             max_players,
@@ -56,7 +57,8 @@ pub fn create_lottery(
     info: &MessageInfo,
     name: &str,
     symobl: &str,
-    unit_price: Uint128,
+    unit_price_amount: u128,
+    unit_price_denom: &str,
     period: &str,
     selection: WinnerSelection,
     max_players: u32,
@@ -68,7 +70,8 @@ pub fn create_lottery(
     let init_lottery_msg = LotteryInstantiateMsg::new(
         name,
         symobl,
-        unit_price,
+        unit_price_amount,
+        unit_price_denom,
         period,
         selection.clone(),
         max_players,
@@ -90,7 +93,7 @@ pub fn create_lottery(
         symbol: symobl.to_owned(),
         height: env.block.height,
         created_at: env.block.time,
-        unit_price,
+        unit_price: coin(unit_price_amount, unit_price_denom),
         period: period.parse()?,
         selection,
         max_players,

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use cosmwasm_std::{coins, Uint128};
+    use cosmwasm_std::{coin, coins};
     use cw_multi_test::App;
 
     use crate::{
@@ -16,6 +16,7 @@ mod test {
         let name = "LOTTERY";
         let symbol = "LOTTER";
         let unit_price = 100;
+        let denom = ARCH_DEMON;
         let period = "hour";
         let selection = WinnerSelection::Jackpot {};
         let max_players = 3;
@@ -27,6 +28,7 @@ mod test {
                 name,
                 symbol,
                 unit_price,
+                denom,
                 period,
                 selection,
                 max_players,
@@ -45,7 +47,7 @@ mod test {
         // check state
         let state = contract.query_state(&app).unwrap().state;
         assert_eq!(state.name, "LOTTERY");
-        assert_eq!(state.unit_price, Uint128::new(100));
+        assert_eq!(state.unit_price, coin(100, ARCH_DEMON));
         assert_eq!(state.max_players, 3);
         assert_eq!(state.status, GameStatus::Activing);
         assert_eq!(state.player_count, 0);
@@ -73,6 +75,7 @@ mod test {
         let name = "LOTTERY";
         let symbol = "LOTTER";
         let unit_price = 100;
+        let denom = ARCH_DEMON;
         let period = "hour";
         let selection = WinnerSelection::Jackpot {};
         let max_players = 3;
@@ -84,6 +87,7 @@ mod test {
                 name,
                 symbol,
                 unit_price,
+                denom,
                 period,
                 selection,
                 max_players,
@@ -181,6 +185,7 @@ mod test {
         let name = "LOTTERY";
         let symbol = "LOTTER";
         let unit_price = 100;
+        let denom = ARCH_DEMON;
         let period = "hour";
         let selection = WinnerSelection::Jackpot {};
         let max_players = 3;
@@ -192,6 +197,7 @@ mod test {
                 name,
                 symbol,
                 unit_price,
+                denom,
                 period,
                 selection,
                 max_players,

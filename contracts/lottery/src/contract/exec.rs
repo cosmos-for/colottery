@@ -80,7 +80,7 @@ pub fn buy_ticket(
 
     let mut state = STATE.load(deps.storage)?;
 
-    if amount < state.unit_price {
+    if amount < state.unit_price.amount {
         return Err(ContractError::PaymentNotEnough { amount });
     }
 

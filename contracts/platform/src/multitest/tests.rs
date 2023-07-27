@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use cosmwasm_std::{coins, Uint128};
+    use cosmwasm_std::{coin, coins};
     use cw_multi_test::App;
     use lottery::{
         multitest::{LotteryCodeId, LotteryContract},
@@ -51,7 +51,8 @@ mod test {
 
         let name = "LOTTERY";
         let symbol = "LOTTER";
-        let unit_price = Uint128::new(100);
+        let unit_price_amount = 100;
+        let unit_price_denom = ARCH_DEMON;
         let period = "hour";
         let selection = WinnerSelection::Jackpot {};
         let max_players = 3;
@@ -62,7 +63,8 @@ mod test {
             owner(),
             name,
             symbol,
-            unit_price,
+            unit_price_amount,
+            unit_price_denom,
             period,
             selection,
             max_players,
@@ -83,7 +85,10 @@ mod test {
         let lottery = &lotteries.lotteries[0];
         assert_eq!(lottery.name, name);
         assert_eq!(lottery.symbol, symbol);
-        assert_eq!(lottery.unit_price, unit_price);
+        assert_eq!(
+            lottery.unit_price,
+            coin(unit_price_amount, unit_price_denom)
+        );
         assert_eq!(lottery.period, LotteryPeriod::Hour {});
         assert_eq!(lottery.selection, WinnerSelection::Jackpot {});
         assert_eq!(lottery.max_players, max_players);
@@ -113,7 +118,8 @@ mod test {
 
         let name = "LOTTERY";
         let symbol = "LOTTER";
-        let unit_price = Uint128::new(100);
+        let unit_price_amount = 100;
+        let unit_price_denom = ARCH_DEMON;
         let period = "hour";
         let selection = WinnerSelection::Jackpot {};
         let max_players = 3;
@@ -124,7 +130,8 @@ mod test {
             owner(),
             name,
             symbol,
-            unit_price,
+            unit_price_amount,
+            unit_price_denom,
             period,
             selection,
             max_players,
@@ -245,7 +252,8 @@ mod test {
 
         let name = "LOTTERY";
         let symbol = "LOTTER";
-        let unit_price = Uint128::new(100);
+        let unit_price_amount = 100;
+        let unit_price_denom = ARCH_DEMON;
         let period = "hour";
         let selection = WinnerSelection::Jackpot {};
         let max_players = 3;
@@ -256,7 +264,8 @@ mod test {
             owner(),
             name,
             symbol,
-            unit_price,
+            unit_price_amount,
+            unit_price_denom,
             period,
             selection,
             max_players,

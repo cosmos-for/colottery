@@ -16,7 +16,7 @@ pub enum ContractError {
     InvalidLottoryPeriod { value: String },
 
     #[error("{value} is not a valid unit price")]
-    InvalidUnitPrice { value: Uint128 },
+    InvalidUnitPrice { value: u128 },
 
     #[error("Operation not implemented")]
     Unimplemented {},

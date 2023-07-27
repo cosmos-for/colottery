@@ -1,4 +1,4 @@
-use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint128};
+use cosmwasm_std::{coin, DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
 use cw721_base::InstantiateMsg as Cw721InstantiateMsg;
 
@@ -18,9 +18,9 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    if msg.unit_price == Uint128::zero() {
+    if msg.unit_price_amount == 0 {
         return Err(ContractError::InvalidUnitPrice {
-            value: msg.unit_price,
+            value: msg.unit_price_amount,
         });
     }
 
@@ -41,7 +41,7 @@ pub fn instantiate(
         height: env.block.height,
         created_at,
         expiratoin: expiration,
-        unit_price: msg.unit_price,
+        unit_price: coin(msg.unit_price_amount, msg.unit_price_denom),
         period,
         selection: msg.selection,
         player_count: 0,

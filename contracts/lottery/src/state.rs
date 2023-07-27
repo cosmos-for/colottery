@@ -4,7 +4,7 @@ use std::str::FromStr;
 //     get_last_day_month, get_last_day_week, get_last_day_year, get_secs_of_hour_22, timestamp_to_utc,
 // };
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Coin, Timestamp, Uint128};
+use cosmwasm_std::{Addr, Coin, Timestamp};
 use cw_storage_plus::{Item, Map};
 
 use crate::{ContractError, Extension};
@@ -16,7 +16,7 @@ pub struct State {
     pub height: u64,
     pub created_at: Timestamp,
     pub expiratoin: Timestamp,
-    pub unit_price: Uint128,
+    pub unit_price: Coin,
     pub period: LotteryPeriod,
     pub selection: WinnerSelection,
     pub player_count: u32,
@@ -117,8 +117,14 @@ impl LotteryPeriod {
         matches!(self, &Self::Year {})
     }
 
+    // Only support: Hour, Day
+    // Other coming soon
     pub fn get_deadline(&self, created_at: Timestamp) -> Timestamp {
-        created_at.plus_days(1)
+        match self {
+            Self::Hour {} => created_at.plus_hours(1),
+            Self::Day {} => created_at.plus_days(1),
+            _ => created_at.plus_days(1),
+        }
         // match self {
         //     Self::Hour {} => created_at.plus_hours(1),
         //     Self::Day {} => Timestamp::from_seconds(get_secs_of_hour_22(
@@ -212,21 +218,21 @@ mod tests {
     #[test]
     fn get_deadline_should_works() {
         let day = LotteryPeriod::Day {};
-        let utc_now = Utc::now();
-        println!("utc now is: {:?}", utc_now.timestamp());
-
-        let utc_22 = utc_now.date_naive().and_hms_opt(22, 0, 0);
-        let now_secs = utc_22.map(|t| t.timestamp()).unwrap() as u64;
-        println!("utc sces is: {:?}", now_secs);
-
-        let now = Timestamp::from_seconds(now_secs);
-
-        println!("bft now seconds: {}", now.seconds());
-
-        assert_eq!(now_secs, now.seconds());
+        let utc_now = Utc::now().timestamp() as u64;
+        println!("utc now is: {:?}", utc_now);
+        let now = Timestamp::from_seconds(utc_now);
 
         let deadline = day.get_deadline(now);
         println!("deadline is: {:?}", deadline.seconds());
-        assert_eq!(deadline.seconds(), now.seconds());
+        assert_eq!(deadline.seconds(), now.plus_days(1).seconds());
+
+        let hour = LotteryPeriod::Hour {};
+        let utc_now = Utc::now().timestamp() as u64;
+        println!("utc now is: {:?}", utc_now);
+        let now = Timestamp::from_seconds(utc_now);
+
+        let deadline = hour.get_deadline(now);
+        println!("deadline is: {:?}", deadline.seconds());
+        assert_eq!(deadline.seconds(), now.plus_hours(1).seconds());
     }
 }

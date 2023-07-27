@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Timestamp, Uint128};
+use cosmwasm_std::{Addr, Coin, Timestamp};
 use cw_storage_plus::{Item, Map};
 
 use lottery::state::{LotteryPeriod, WinnerSelection};
@@ -41,7 +41,7 @@ pub struct LotteryInfo {
     pub symbol: String,
     pub height: u64,
     pub created_at: Timestamp,
-    pub unit_price: Uint128,
+    pub unit_price: Coin,
     pub period: LotteryPeriod,
     pub selection: WinnerSelection,
     pub max_players: u32,
