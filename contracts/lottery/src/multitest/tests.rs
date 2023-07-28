@@ -78,7 +78,7 @@ mod test {
         let denom = ARCH_DEMON;
         let period = "hour";
         let selection = WinnerSelection::Jackpot {};
-        let max_players = 3;
+        let max_players = 2;
         let label = "Lottery label";
         let contract = code_id
             .instantiate(

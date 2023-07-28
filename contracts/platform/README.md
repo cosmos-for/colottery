@@ -5,7 +5,8 @@ This is a game about Lottery, where anyone can stake any asset to earn profits a
 ## Lottery  Gameplay：
 
 1. Buy:
-   Purchase using the native token of the corresponding blockchain. The cost is a fixed amount for each round, and the denominations can be set during the initialization of the Lottery contract. For example: 10 ARCH, 20 ARCH, 50 ARCH, 100 ARCH, 200 ARCH, etc.
+   Purchase using the native token of the corresponding blockchain. The cost is a fixed amount for each round, and the denominations can be set during the initialization of the Lottery contract. 
+   For example: 10_000_000_000_000_000_000aconst (10 ARCH), 20_000_000_000_000_000_000aconst (20 ARCH), 20_000_000_000_000_000_000aconst (50 ARCH), 100_000_000_000_000_000_000aconst (100 ARCH), 200_000_000_000_000_000_000aconst (200 ARCH), etc.
 
 2. Draw:
    Regular draws, for instance, at 22:00 (automated through Oracle if possible, manual as an alternative).

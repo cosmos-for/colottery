@@ -51,6 +51,12 @@ pub enum ContractError {
     #[error("The payment funds is not enough")]
     PaymentNotEnough { amount: Uint128 },
 
+    #[error("The lottery player is full: {max_players}")]
+    PlayerExceededMaximum { max_players: u32 },
+
+    #[error("The lottery is activing, can't draw")]
+    LotteryIsActiving {},
+
     #[error("error(0)")]
     PaymentError(#[from] PaymentError),
 

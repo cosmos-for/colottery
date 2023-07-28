@@ -4,7 +4,7 @@ use cw721_base::InstantiateMsg as Cw721InstantiateMsg;
 
 use crate::{
     msg::InstantiateMsg,
-    state::{GameStatus, LotteryPeriod, State, OWNER, STATE},
+    state::{GameStatus, LotteryPeriod, State, OWNER, PLAYER_COUNTER, STATE},
     ContractError, Cw721MetadataContract,
 };
 
@@ -53,6 +53,7 @@ pub fn instantiate(
 
     STATE.save(deps.storage, &config)?;
     OWNER.save(deps.storage, &info.sender)?;
+    PLAYER_COUNTER.save(deps.storage, &0)?;
 
     let init_msg = Cw721InstantiateMsg {
         name: msg.name,

@@ -1,11 +1,13 @@
-use cosmwasm_std::{attr, coins, Addr, BankMsg, DepsMut, Env, MessageInfo, Response, Storage};
+use cosmwasm_std::{
+    attr, coins, Addr, BankMsg, DepsMut, Env, MessageInfo, Response, StdResult, Storage,
+};
 
 use cw_storage_plus::Map;
 use cw_utils::must_pay;
 
 use crate::{
     msg::ExecuteMsg,
-    state::{GameStatus, PlayerInfo, WinnerInfo, OWNER, PLAYERS, STATE},
+    state::{GameStatus, PlayerInfo, WinnerInfo, OWNER, PLAYERS, PLAYER_COUNTER, STATE},
     ContractError, ARCH_DEMON,
 };
 
@@ -84,6 +86,14 @@ pub fn buy_ticket(
         return Err(ContractError::PaymentNotEnough { amount });
     }
 
+    let player_counter = PLAYER_COUNTER.load(deps.storage)?;
+
+    if player_counter == state.max_players {
+        return Err(ContractError::PlayerExceededMaximum {
+            max_players: player_counter,
+        });
+    }
+
     let lottery_height = state.height;
 
     let contract_addr = &env.contract.address;
@@ -133,6 +143,8 @@ pub fn buy_ticket(
                 },
             )?;
 
+            PLAYER_COUNTER.update(deps.storage, |c| -> StdResult<u32> { Ok(c + 1) })?;
+
             let attributes = vec![
                 attr("action", "buy_ticket"),
                 attr("sender", sender.as_str()),
@@ -176,6 +188,14 @@ pub fn draw_lottery(
             current_height,
             lottery_height,
         });
+    }
+
+    let current_time = env.block.time;
+    let player_counter = PLAYER_COUNTER.load(deps.storage)?;
+
+    // if lottery is expired or player exceed maximum, lottery can be drawed
+    if (current_time < state.expiratoin) && (player_counter < state.max_players) {
+        return Err(ContractError::LotteryIsActiving {});
     }
 
     let winner = choose_winner_infos(PLAYERS, deps.storage)?;
