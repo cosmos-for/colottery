@@ -8,7 +8,6 @@ pub fn init(id: &str, block_height: u64) -> String {
     sha256.update(block_height.to_le_bytes());
     let hash = sha256.finalize();
     Base64::encode_string(&hash)
-    // format!("{:x}", hash)
 }
 
 pub fn update(
@@ -28,7 +27,6 @@ pub fn update(
     }
     let hash = sha256.finalize();
     Base64::encode_string(&hash)
-    // format!("{:x}", hash)
 }
 
 pub fn finalize(
@@ -46,5 +44,4 @@ pub fn finalize(
     }
     let hash = sha256.finalize();
     Base64::encode_string(&hash)
-    // format!("{:x}", hash)
 }

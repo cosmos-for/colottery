@@ -111,7 +111,7 @@ mod test {
                 &mut app,
                 bob(),
                 ARCH_DEMON,
-                Some("我要发达!".to_string()),
+                Some("我要发".to_string()),
                 &coins(100, ARCH_DEMON),
             )
             .unwrap();

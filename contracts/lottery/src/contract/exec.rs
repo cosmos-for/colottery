@@ -1,15 +1,13 @@
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
-
-use common::random;
+use common::hash::{self, hash_to_u64};
 use cosmwasm_std::{
-    attr, coins, ensure, Addr, BankMsg, DepsMut, Env, MessageInfo, Response, Storage, Timestamp,
+    attr, coins, ensure, Addr, BankMsg, DepsMut, Env, MessageInfo, Response, Storage,
 };
 
 use cw_storage_plus::Map;
 use cw_utils::must_pay;
 
 use crate::{
+    auth::exec::{validate_buy, validate_draw, validate_height},
     msg::ExecuteMsg,
     state::{
         GameStatus, PlayerInfo, State, WinnerInfo, IDX_2_ADDR, OWNER, PLAYERS, PLAYER_COUNTER,
@@ -79,47 +77,48 @@ pub fn buy_ticket(
     memo: Option<String>,
 ) -> Result<Response, ContractError> {
     // Check funds pay, only support ARCH first
-    validate_denom(denom, ARCH_DEMON)?;
-
-    let amount = must_pay(info, denom)?;
+    // validate_denom(denom, ARCH_DEMON)?;
 
     let mut state = STATE.load(deps.storage)?;
 
-    if amount < state.unit_price.amount {
-        return Err(ContractError::PaymentNotEnough { amount });
-    }
+    // validate_price(amount, state.unit_price)?;
 
     let player_counter = PLAYER_COUNTER.load(deps.storage)?;
 
-    if player_counter == state.max_players {
-        return Err(ContractError::PlayerExceededMaximum {
-            max_players: player_counter,
-        });
-    }
+    validate_buy(&state, info, denom, player_counter, env)?;
+
+    // validate_player_counter(player_counter, state.max_players)?;
+
+    // if player_counter == state.max_players {
+    //     return Err(ContractError::PlayerExceededMaximum {
+    //         max_players: player_counter,
+    //     });
+    // }
 
     let lottery_height = state.height;
 
     let contract_addr = &env.contract.address;
     let current_height = env.block.height;
 
+    // validate_expiration(&env, &state)?;
     // Only can buy lottery after created block height
-    if state.height > current_height {
-        return Err(ContractError::LotteryHeightNotMatch {
-            current_height,
-            lottery_height,
-        });
-    }
+    // if state.height > current_height {
+    //     return Err(ContractError::LotteryHeightNotMatch {
+    //         current_height,
+    //         lottery_height,
+    //     });
+    // }
 
-    if env.block.time >= state.expiratoin {
-        return Err(ContractError::AlreadyExpired {});
-    }
+    // if env.block.time >= state.expiratoin {
+    //     return Err(ContractError::AlreadyExpired {});
+    // }
 
     // Can't buy lottery after lottery is already closed
-    if state.is_closed() {
-        return Err(ContractError::LotteryAlreadyClosed {
-            address: contract_addr.to_owned(),
-        });
-    }
+    // if state.is_closed() {
+    //     return Err(ContractError::LotteryAlreadyClosed {
+    //         address: contract_addr.to_owned(),
+    //     });
+    // }
 
     let sender = &info.sender;
     let player = PLAYERS.may_load(deps.storage, sender)?;
@@ -134,7 +133,7 @@ pub fn buy_ticket(
             let player_counter = PLAYER_COUNTER.load(deps.storage)? + 1;
 
             state.seed =
-                random::seed::update(&state.seed, sender, player_counter, env.block.height, &memo);
+                hash::seed::update(&state.seed, sender, player_counter, env.block.height, &memo);
 
             state.player_count += 1;
             STATE.save(deps.storage, &state)?;
@@ -159,7 +158,7 @@ pub fn buy_ticket(
                 attr("action", "buy_ticket"),
                 attr("sender", sender.as_str()),
                 attr("denom", denom),
-                attr("amount", amount.to_string()),
+                // attr("amount", info.funds.to_string()),
                 attr("height", current_height.to_string()),
             ];
 
@@ -178,54 +177,55 @@ pub fn draw_lottery(
     let mut state = STATE.load(deps.storage)?;
 
     let owner = OWNER.load(deps.storage)?;
+    let player_counter = PLAYER_COUNTER.load(deps.storage)?;
 
-    if owner != sender {
-        return Err(ContractError::Unauthorized {});
-    }
+    validate_draw(&state, &owner, info, env, player_counter)?;
 
-    if state.is_closed() {
-        return Err(ContractError::LotteryAlreadyClosed {
-            address: env.contract.address.to_owned(),
-        });
-    }
+    // validate_owner(&state, &info)?;
+
+    // if owner != sender {
+    //     return Err(ContractError::Unauthorized {});
+    // }
+
+    // validate_status(&state)?;
+
+    // if state.is_closed() {
+    //     return Err(ContractError::LotteryAlreadyClosed {
+    //     });
+    // }
 
     let current_height = env.block.height;
     let transaction = env.transaction.as_ref().map(|t| t.index.to_string());
-    let lottery_height = state.height;
+    // let lottery_height = state.height;
 
-    // Only can buy lottery after created block height
-    if lottery_height > current_height {
-        return Err(ContractError::LotteryHeightNotMatch {
-            current_height,
-            lottery_height,
-        });
-    }
+    // validate_height(&state, env)?;
 
-    let current_time = env.block.time;
+    // // Only can buy lottery after created block height
+    // if lottery_height > current_height {
+    //     return Err(ContractError::LotteryHeightNotMatch {
+    //         current_height,
+    //         lottery_height,
+    //     });
+    // }
 
-    println!("the current time is: {:?}", current_time);
-    println!("The current time seconds is: {:?}", current_time.seconds());
+    // let current_time = env.block.time;
 
-    let player_counter = PLAYER_COUNTER.load(deps.storage)?;
+    // println!("the current time is: {:?}", current_time);
+    // println!("The current time seconds is: {:?}", current_time.seconds());
 
-    // if lottery is expired or player exceed maximum, lottery can be drawed
-    if (current_time < state.expiratoin) && (player_counter < state.max_players) {
-        return Err(ContractError::LotteryIsActiving {});
-    }
+    // validate_activing(&state, &env, player_counter)?;
+
+    // // if lottery is expired or player exceed maximum, lottery can be drawed
+    // if (current_time < state.expiratoin) && (player_counter < state.max_players) {
+    //     return Err(ContractError::LotteryIsActiving {});
+    // }
 
     // Change status to `Closed`
     state.status = GameStatus::Closed;
 
-    state.seed = random::seed::finalize(&state.seed, sender, env.block.height, &transaction);
+    state.seed = hash::seed::finalize(&state.seed, sender, env.block.height, &transaction);
 
-    let winner = choose_winner_infos(
-        PLAYERS,
-        IDX_2_ADDR,
-        &state,
-        &current_time,
-        player_counter,
-        deps.storage,
-    )?;
+    let winner = choose_winner_infos(PLAYERS, IDX_2_ADDR, &state, player_counter, deps.storage)?;
 
     if winner.is_empty() {
         state.winner = vec![];
@@ -344,11 +344,10 @@ pub fn choose_winner_infos(
     players: Map<&Addr, PlayerInfo>,
     idx_addr: Map<u64, Addr>,
     state: &State,
-    ts: &Timestamp,
     player_counter: u64,
     storage: &dyn Storage,
 ) -> Result<Vec<PlayerInfo>, ContractError> {
-    validate_winner_selection(state)?;
+    // validate_winner_selection(state)?;
 
     if state.player_count == 0 {
         Ok(vec![])
@@ -358,40 +357,14 @@ pub fn choose_winner_infos(
     } else {
         let seed = state.seed.as_str();
         let seed_num = hash_to_u64(seed);
-        // let seed_num= u64::from_str_radix(seed, 16).unwrap();
 
-        let idx = seed_num % player_counter;
+        println!("The seed num is {:?}", seed_num);
+
+        let idx = seed_num % player_counter + 1;
+        println!("The idx is: {:?}", idx);
+
         let address = idx_addr.may_load(storage, idx)?.unwrap();
         let player_info = players.load(storage, &address)?;
         Ok(vec![player_info])
     }
-}
-
-pub fn validate_winner_selection(state: &State) -> Result<(), ContractError> {
-    ensure!(
-        state.selection.is_jackpot(),
-        ContractError::UnSupportedWinnerSelection {
-            selection: state.selection.clone()
-        }
-    );
-    Ok(())
-}
-
-pub fn validate_denom(denom: &str, denom_exists: &str) -> Result<(), ContractError> {
-    ensure!(
-        denom == denom_exists,
-        ContractError::UnSupportedDenom {
-            denom: denom.into(),
-        }
-    );
-    Ok(())
-}
-
-fn hash_to_u64<T>(obj: T) -> u64
-where
-    T: Hash,
-{
-    let mut hasher = DefaultHasher::new();
-    obj.hash(&mut hasher);
-    hasher.finish()
 }

@@ -69,7 +69,7 @@ pub enum ContractError {
     },
 
     #[error("Lottery is already closed")]
-    LotteryAlreadyClosed { address: Addr },
+    LotteryAlreadyClosed {},
 
     #[error("The contract has nothing to claim")]
     NothingToClaim {},

@@ -29,7 +29,7 @@ fn test_nanos() {
     assert_eq!(expected, idx);
 
     let idx = choose_idx_by_nano(ts, 10);
-    let expected = 2 % 10;
+    let expected = 2;
     println!("expected is: {}", expected);
     assert_eq!(expected, idx);
 }

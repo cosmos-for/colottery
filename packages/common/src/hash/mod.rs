@@ -5,6 +5,8 @@ mod pcg64;
 pub mod seed;
 
 use base64ct::{Base64, Encoding};
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
 use crate::error::CommonError;
 
@@ -21,4 +23,13 @@ pub fn pcg64_from_seed(seed: &str) -> Result<Pcg64, CommonError> {
             seed: seed.to_owned(),
         }),
     }
+}
+
+pub fn hash_to_u64<T>(obj: T) -> u64
+where
+    T: Hash,
+{
+    let mut hasher = DefaultHasher::new();
+    obj.hash(&mut hasher);
+    hasher.finish()
 }
