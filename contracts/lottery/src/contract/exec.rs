@@ -1,5 +1,6 @@
+use common::random;
 use cosmwasm_std::{
-    attr, coins, Addr, BankMsg, DepsMut, Env, MessageInfo, Response, StdResult, Storage,
+    attr, coins, ensure, Addr, BankMsg, DepsMut, Env, MessageInfo, Response, Storage, Timestamp,
 };
 
 use cw_storage_plus::Map;
@@ -7,7 +8,10 @@ use cw_utils::must_pay;
 
 use crate::{
     msg::ExecuteMsg,
-    state::{GameStatus, PlayerInfo, WinnerInfo, OWNER, PLAYERS, PLAYER_COUNTER, STATE},
+    state::{
+        GameStatus, PlayerInfo, State, WinnerInfo, IDX_2_ADDR, OWNER, PLAYERS, PLAYER_COUNTER,
+        STATE,
+    },
     ContractError, ARCH_DEMON,
 };
 
@@ -72,11 +76,7 @@ pub fn buy_ticket(
     memo: Option<String>,
 ) -> Result<Response, ContractError> {
     // Check funds pay, only support ARCH first
-    if denom != ARCH_DEMON {
-        return Err(ContractError::UnSupportedDenom {
-            denom: denom.into(),
-        });
-    }
+    validate_denom(denom, ARCH_DEMON)?;
 
     let amount = must_pay(info, denom)?;
 
@@ -128,6 +128,11 @@ pub fn buy_ticket(
             lottery: contract_addr.to_owned(),
         }),
         None => {
+            let player_counter = PLAYER_COUNTER.load(deps.storage)? + 1;
+
+            state.seed =
+                random::seed::update(&state.seed, sender, player_counter, env.block.height, &memo);
+
             state.player_count += 1;
             STATE.save(deps.storage, &state)?;
 
@@ -143,7 +148,9 @@ pub fn buy_ticket(
                 },
             )?;
 
-            PLAYER_COUNTER.update(deps.storage, |c| -> StdResult<u32> { Ok(c + 1) })?;
+            PLAYER_COUNTER.save(deps.storage, &player_counter)?;
+
+            IDX_2_ADDR.save(deps.storage, player_counter, sender)?;
 
             let attributes = vec![
                 attr("action", "buy_ticket"),
@@ -180,6 +187,7 @@ pub fn draw_lottery(
     }
 
     let current_height = env.block.height;
+    let transaction = env.transaction.as_ref().map(|t| t.index.to_string());
     let lottery_height = state.height;
 
     // Only can buy lottery after created block height
@@ -198,7 +206,14 @@ pub fn draw_lottery(
         return Err(ContractError::LotteryIsActiving {});
     }
 
-    let winner = choose_winner_infos(PLAYERS, deps.storage)?;
+    let winner = choose_winner_infos(
+        PLAYERS,
+        IDX_2_ADDR,
+        &state,
+        &current_time,
+        player_counter,
+        deps.storage,
+    )?;
 
     if winner.is_empty() {
         state.winner = vec![];
@@ -215,6 +230,8 @@ pub fn draw_lottery(
 
     // Change status to `Closed`
     state.status = GameStatus::Closed;
+
+    state.seed = random::seed::finalize(&state.seed, sender, env.block.height, &transaction);
 
     STATE.save(deps.storage, &state)?;
 
@@ -315,12 +332,93 @@ pub fn withdraw(
         .add_attributes(attributes))
 }
 
-// TODO Choose winner use random number in players
+// Choose winner use random number in players
 pub fn choose_winner_infos(
     players: Map<&Addr, PlayerInfo>,
+    idx_addr: Map<u32, Addr>,
+    state: &State,
+    ts: &Timestamp,
+    player_counter: u32,
     storage: &dyn Storage,
 ) -> Result<Vec<PlayerInfo>, ContractError> {
-    // TODO get first
-    let winner = players.first(storage)?;
-    Ok(winner.into_iter().map(|(_, player)| player).collect())
+    validate_winner_selection(state)?;
+
+    if state.player_count == 0 {
+        Ok(vec![])
+    } else if state.player_count == 1 {
+        let winner = players.first(storage)?;
+        Ok(winner.into_iter().map(|(_, player)| player).collect())
+    } else {
+        let idx = random::rule::choose_idx_by_nano(ts, player_counter);
+        let address = idx_addr.may_load(storage, idx)?.unwrap();
+        let player_info = players.load(storage, &address)?;
+        Ok(vec![player_info])
+    }
+
+    // let (n_winners, pct_split) = match state.selection.clone() {
+    //     WinnerSelection::Jackpot {  } => todo!(),
+    //     WinnerSelection::Fixed { pct_split, winner_count, max_winner_count } => {
+    //         let mut n_winners = std::cmp::min(state.player_count, winner_count);
+    //         if let Some(n_max) = max_winner_count {
+    //             if n_max > 0 {
+    //                 n_winners = std::cmp::min(n_max, n_winners);
+    //             }
+    //         }
+    //         (n_winners, pct_split)
+    //     }
+    // };
+
+    // let indices = INDICES.load(storage)?;
+    // let mut n_found = 0u32;
+    // let mut rng = random::pcg64_from_seed(&state.seed)?;
+    // let mut visited: HashSet<u32> = HashSet::with_capacity(n_winners as usize);
+
+    // while n_found < n_winners {
+    //     let i = rng.next_u64() % indices.len() as u64;
+    //     let address_index = indices[i as usize];
+    //     let already_selected = visited.contains(&address_index);
+    //     if !game.has_distinct_winners || !already_selected {
+    //       let addr = INDEX_2_ADDR.load(storage, address_index)?;
+    //       if addr == *sender && is_suspect {
+    //         return Err(ContractError::NotAuthorized {});
+    //       }
+    //       let player = PLAYERS.load(storage, addr.clone())?;
+    //       let claim_amount = allocate_reward(game, total_reward, n_found, &pct_split);
+    //       visited.insert(address_index);
+    //       WINNERS.save(
+    //         storage,
+    //         n_found,
+    //         &Winner {
+    //           address: addr,
+    //           ticket_count: player.ticket_count,
+    //           position: n_found,
+    //           has_claimed: false,
+    //           claim_amount,
+    //         },
+    //       )?;
+    //       n_found += 1
+    //     }
+    // }
+
+    // Ok(n_found)
+}
+
+pub fn validate_winner_selection(state: &State) -> Result<(), ContractError> {
+    ensure!(
+        state.selection.is_jackpot(),
+        ContractError::UnSupportedWinnerSelection {
+            selection: state.selection.clone()
+        }
+    );
+    Ok(())
+}
+
+pub fn validate_denom(denom: &str, denom_exists: &str) -> Result<(), ContractError> {
+    ensure!(
+        denom == denom_exists,
+        ContractError::UnSupportedDenom {
+            denom: denom.into(),
+        }
+    );
+    Ok(())
 }

@@ -23,6 +23,7 @@ pub struct State {
     pub player_count: u32,
     pub max_players: u32,
     pub status: GameStatus,
+    pub seed: String,
     pub winner: Vec<WinnerInfo>,
     pub extension: Extension,
 }
@@ -179,6 +180,7 @@ pub const OWNER: Item<Addr> = Item::new("owner");
 pub const STATE: Item<State> = Item::new("state");
 pub const PLAYERS: Map<&Addr, PlayerInfo> = Map::new("players");
 pub const PLAYER_COUNTER: Item<u32> = Item::new("player_counter");
+pub const IDX_2_ADDR: Map<u32, Addr> = Map::new("idx_2_addr");
 
 // pub const CLAIMS: Claims = Claims::new("claims");
 

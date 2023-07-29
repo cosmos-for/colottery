@@ -6,6 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = { workspace = true, optional = true }
+base64ct = { workspace = true }
+chrono = { workspace = true }
 cosmwasm-schema = { workspace = true }
 cosmwasm-std = { workspace = true }
 cosmwasm-storage = { workspace = true }
@@ -14,11 +17,10 @@ cw-utils = { workspace = true }
 cw2 = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true }
+sha2 = { workspace = true }
 thiserror = { workspace = true }
-anyhow = { workspace = true, optional = true }
-cw-multi-test = { workspace = true, optional = true }
 
-chrono = { workspace = true }
+cw-multi-test = { workspace = true, optional = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }

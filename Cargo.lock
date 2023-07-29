@@ -132,6 +132,7 @@ name = "common"
 version = "1.0.0"
 dependencies = [
  "anyhow",
+ "base64ct",
  "chrono",
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -142,6 +143,7 @@ dependencies = [
  "cw2 1.1.0",
  "schemars",
  "serde",
+ "sha2 0.10.7",
  "thiserror",
 ]
 

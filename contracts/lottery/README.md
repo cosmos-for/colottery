@@ -17,9 +17,14 @@ This is a game about Lottery, where anyone can stake any asset to earn profits a
 4. Period：
    There are three types of Lottery periods: Day (DAY), Month (MONTH), and Year (YEAR). Additional periods like Hour (HOUR) and Week (WEEK) can be added if required.
    
+4. Period：
+   There are five types of Lottery periods: Hour, Day, Week, Month, and Year
+   
 5.  Eligibility: 
+    - Hour Lottery: Open to all participants
     - DAY Lottery: Open to all participants
-    - MONTH Lottery: Participants must have participated in 15 previous DAY Lotteries.
+    - Week Lottery: Open to all participants
+    - MONTH Lottery: Participants must have participated in 15 previous DAY Lotteries. 
     - YEAR Lottery: Participants must have participated in 10 previous MONTH Lotteries or 200 previous DAY Lotteries.
 
 ## Use Cases
