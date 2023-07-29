@@ -8,12 +8,13 @@ pub fn init(id: &str, block_height: u64) -> String {
     sha256.update(block_height.to_le_bytes());
     let hash = sha256.finalize();
     Base64::encode_string(&hash)
+    // format!("{:x}", hash)
 }
 
 pub fn update(
     seed: &str,
     owner: &Addr,
-    ticket_count: u32,
+    ticket_count: u64,
     block_height: u64,
     lucky_phrase: &Option<String>,
 ) -> String {
@@ -27,6 +28,7 @@ pub fn update(
     }
     let hash = sha256.finalize();
     Base64::encode_string(&hash)
+    // format!("{:x}", hash)
 }
 
 pub fn finalize(
@@ -44,4 +46,5 @@ pub fn finalize(
     }
     let hash = sha256.finalize();
     Base64::encode_string(&hash)
+    // format!("{:x}", hash)
 }

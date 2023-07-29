@@ -19,6 +19,7 @@ cw20 = "1.1"
 cw721-base = { version = "0.18", features = ["library"] }
 cw-controllers = "1.1"
 cw-multi-test = "0.16"
+hex-literal = "0.4"
 schemars = "0.8"
 sha2 = "0.10"
 serde = { version = "1.0", default-features = false, features = ["derive"] }

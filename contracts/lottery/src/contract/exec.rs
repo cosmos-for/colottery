@@ -1,3 +1,6 @@
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+
 use common::random;
 use cosmwasm_std::{
     attr, coins, ensure, Addr, BankMsg, DepsMut, Env, MessageInfo, Response, Storage, Timestamp,
@@ -199,12 +202,21 @@ pub fn draw_lottery(
     }
 
     let current_time = env.block.time;
+
+    println!("the current time is: {:?}", current_time);
+    println!("The current time seconds is: {:?}", current_time.seconds());
+
     let player_counter = PLAYER_COUNTER.load(deps.storage)?;
 
     // if lottery is expired or player exceed maximum, lottery can be drawed
     if (current_time < state.expiratoin) && (player_counter < state.max_players) {
         return Err(ContractError::LotteryIsActiving {});
     }
+
+    // Change status to `Closed`
+    state.status = GameStatus::Closed;
+
+    state.seed = random::seed::finalize(&state.seed, sender, env.block.height, &transaction);
 
     let winner = choose_winner_infos(
         PLAYERS,
@@ -227,11 +239,6 @@ pub fn draw_lottery(
         };
         state.winner.push(winner_info);
     }
-
-    // Change status to `Closed`
-    state.status = GameStatus::Closed;
-
-    state.seed = random::seed::finalize(&state.seed, sender, env.block.height, &transaction);
 
     STATE.save(deps.storage, &state)?;
 
@@ -335,10 +342,10 @@ pub fn withdraw(
 // Choose winner use random number in players
 pub fn choose_winner_infos(
     players: Map<&Addr, PlayerInfo>,
-    idx_addr: Map<u32, Addr>,
+    idx_addr: Map<u64, Addr>,
     state: &State,
     ts: &Timestamp,
-    player_counter: u32,
+    player_counter: u64,
     storage: &dyn Storage,
 ) -> Result<Vec<PlayerInfo>, ContractError> {
     validate_winner_selection(state)?;
@@ -349,58 +356,15 @@ pub fn choose_winner_infos(
         let winner = players.first(storage)?;
         Ok(winner.into_iter().map(|(_, player)| player).collect())
     } else {
-        let idx = random::rule::choose_idx_by_nano(ts, player_counter);
+        let seed = state.seed.as_str();
+        let seed_num = hash_to_u64(seed);
+        // let seed_num= u64::from_str_radix(seed, 16).unwrap();
+
+        let idx = seed_num % player_counter;
         let address = idx_addr.may_load(storage, idx)?.unwrap();
         let player_info = players.load(storage, &address)?;
         Ok(vec![player_info])
     }
-
-    // let (n_winners, pct_split) = match state.selection.clone() {
-    //     WinnerSelection::Jackpot {  } => todo!(),
-    //     WinnerSelection::Fixed { pct_split, winner_count, max_winner_count } => {
-    //         let mut n_winners = std::cmp::min(state.player_count, winner_count);
-    //         if let Some(n_max) = max_winner_count {
-    //             if n_max > 0 {
-    //                 n_winners = std::cmp::min(n_max, n_winners);
-    //             }
-    //         }
-    //         (n_winners, pct_split)
-    //     }
-    // };
-
-    // let indices = INDICES.load(storage)?;
-    // let mut n_found = 0u32;
-    // let mut rng = random::pcg64_from_seed(&state.seed)?;
-    // let mut visited: HashSet<u32> = HashSet::with_capacity(n_winners as usize);
-
-    // while n_found < n_winners {
-    //     let i = rng.next_u64() % indices.len() as u64;
-    //     let address_index = indices[i as usize];
-    //     let already_selected = visited.contains(&address_index);
-    //     if !game.has_distinct_winners || !already_selected {
-    //       let addr = INDEX_2_ADDR.load(storage, address_index)?;
-    //       if addr == *sender && is_suspect {
-    //         return Err(ContractError::NotAuthorized {});
-    //       }
-    //       let player = PLAYERS.load(storage, addr.clone())?;
-    //       let claim_amount = allocate_reward(game, total_reward, n_found, &pct_split);
-    //       visited.insert(address_index);
-    //       WINNERS.save(
-    //         storage,
-    //         n_found,
-    //         &Winner {
-    //           address: addr,
-    //           ticket_count: player.ticket_count,
-    //           position: n_found,
-    //           has_claimed: false,
-    //           claim_amount,
-    //         },
-    //       )?;
-    //       n_found += 1
-    //     }
-    // }
-
-    // Ok(n_found)
 }
 
 pub fn validate_winner_selection(state: &State) -> Result<(), ContractError> {
@@ -421,4 +385,13 @@ pub fn validate_denom(denom: &str, denom_exists: &str) -> Result<(), ContractErr
         }
     );
     Ok(())
+}
+
+fn hash_to_u64<T>(obj: T) -> u64
+where
+    T: Hash,
+{
+    let mut hasher = DefaultHasher::new();
+    obj.hash(&mut hasher);
+    hasher.finish()
 }

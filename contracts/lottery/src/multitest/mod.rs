@@ -33,7 +33,7 @@ impl LotteryCodeId {
         unit_price_denom: &str,
         period: &str,
         selection: WinnerSelection,
-        max_bettors: u32,
+        max_players: u64,
         label: &str,
     ) -> AnyResult<LotteryContract> {
         LotteryContract::instantiate(
@@ -46,7 +46,7 @@ impl LotteryCodeId {
             unit_price_denom,
             period,
             selection,
-            max_bettors,
+            max_players,
             label,
         )
     }
@@ -79,7 +79,7 @@ impl LotteryContract {
         unit_price_denom: &str,
         period: &str,
         selection: WinnerSelection,
-        max_bettors: u32,
+        max_players: u64,
         label: &str,
     ) -> AnyResult<Self> {
         let init_msg = InstantiateMsg::new(
@@ -89,7 +89,7 @@ impl LotteryContract {
             unit_price_denom,
             period,
             selection,
-            max_bettors,
+            max_players,
         );
 
         app.instantiate_contract(
