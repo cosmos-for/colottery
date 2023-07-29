@@ -1,4 +1,5 @@
-use cosmwasm_std::{coin, DepsMut, Env, MessageInfo, Response};
+use common::hash;
+use cosmwasm_std::{attr, coin, DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
 use cw721_base::InstantiateMsg as Cw721InstantiateMsg;
 
@@ -31,6 +32,7 @@ pub fn instantiate(
         });
     }
 
+    let sender = &info.sender;
     let created_at = env.block.time;
     let period: LotteryPeriod = msg.period.parse()?;
     let expiration = period.get_deadline(created_at);
@@ -47,12 +49,13 @@ pub fn instantiate(
         player_count: 0,
         max_players: msg.max_players,
         status: GameStatus::Activing,
+        seed: hash::seed::init(env.contract.address.as_str(), env.block.height),
         winner: vec![],
         extension: Default::default(),
     };
 
     STATE.save(deps.storage, &config)?;
-    OWNER.save(deps.storage, &info.sender)?;
+    OWNER.save(deps.storage, sender)?;
     PLAYER_COUNTER.save(deps.storage, &0)?;
 
     let init_msg = Cw721InstantiateMsg {
@@ -61,7 +64,12 @@ pub fn instantiate(
         minter: info.sender.to_string(),
     };
 
+    let attrs = vec![
+        attr("action", "instantiate"),
+        attr("sender", sender.as_str()),
+    ];
+
     Cw721MetadataContract::default().instantiate(deps.branch(), env, info, init_msg)?;
 
-    Ok(Response::new())
+    Ok(Response::new().add_attributes(attrs))
 }

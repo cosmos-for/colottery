@@ -12,7 +12,7 @@ pub enum ExecuteMsg {
         unit_price_denom: String,
         period: String,
         selection: WinnerSelection,
-        max_players: u32,
+        max_players: u64,
         label: String,
     },
     DrawLottery {

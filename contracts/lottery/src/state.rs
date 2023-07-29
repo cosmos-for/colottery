@@ -20,9 +20,10 @@ pub struct State {
     pub unit_price: Coin,
     pub period: LotteryPeriod,
     pub selection: WinnerSelection,
-    pub player_count: u32,
-    pub max_players: u32,
+    pub player_count: u64,
+    pub max_players: u64,
     pub status: GameStatus,
+    pub seed: String,
     pub winner: Vec<WinnerInfo>,
     pub extension: Extension,
 }
@@ -178,7 +179,8 @@ pub struct WinnerInfo {
 pub const OWNER: Item<Addr> = Item::new("owner");
 pub const STATE: Item<State> = Item::new("state");
 pub const PLAYERS: Map<&Addr, PlayerInfo> = Map::new("players");
-pub const PLAYER_COUNTER: Item<u32> = Item::new("player_counter");
+pub const PLAYER_COUNTER: Item<u64> = Item::new("player_counter");
+pub const IDX_2_ADDR: Map<u64, Addr> = Map::new("idx_2_addr");
 
 // pub const CLAIMS: Claims = Claims::new("claims");
 

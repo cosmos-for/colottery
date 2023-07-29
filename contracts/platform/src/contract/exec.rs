@@ -61,7 +61,7 @@ pub fn create_lottery(
     unit_price_denom: &str,
     period: &str,
     selection: WinnerSelection,
-    max_players: u32,
+    max_players: u64,
     label: &str,
 ) -> Result<Response, ContractError> {
     let sender = &info.sender;

@@ -1,13 +1,17 @@
-use cosmwasm_std::{
-    attr, coins, Addr, BankMsg, DepsMut, Env, MessageInfo, Response, StdResult, Storage,
-};
+use common::hash::{self, hash_to_u64};
+use cosmwasm_std::{attr, coins, Addr, BankMsg, DepsMut, Env, MessageInfo, Response, Storage};
 
 use cw_storage_plus::Map;
-use cw_utils::must_pay;
 
 use crate::{
+    auth::exec::{
+        validate_balance, validate_buy, validate_double_buy, validate_draw, validate_owner,
+    },
     msg::ExecuteMsg,
-    state::{GameStatus, PlayerInfo, WinnerInfo, OWNER, PLAYERS, PLAYER_COUNTER, STATE},
+    state::{
+        GameStatus, PlayerInfo, State, WinnerInfo, IDX_2_ADDR, OWNER, PLAYERS, PLAYER_COUNTER,
+        STATE,
+    },
     ContractError, ARCH_DEMON,
 };
 
@@ -71,91 +75,23 @@ pub fn buy_ticket(
     denom: &str,
     memo: Option<String>,
 ) -> Result<Response, ContractError> {
-    // Check funds pay, only support ARCH first
-    if denom != ARCH_DEMON {
-        return Err(ContractError::UnSupportedDenom {
-            denom: denom.into(),
-        });
-    }
-
-    let amount = must_pay(info, denom)?;
-
     let mut state = STATE.load(deps.storage)?;
 
-    if amount < state.unit_price.amount {
-        return Err(ContractError::PaymentNotEnough { amount });
-    }
-
-    let player_counter = PLAYER_COUNTER.load(deps.storage)?;
-
-    if player_counter == state.max_players {
-        return Err(ContractError::PlayerExceededMaximum {
-            max_players: player_counter,
-        });
-    }
-
-    let lottery_height = state.height;
-
-    let contract_addr = &env.contract.address;
-    let current_height = env.block.height;
-
-    // Only can buy lottery after created block height
-    if state.height > current_height {
-        return Err(ContractError::LotteryHeightNotMatch {
-            current_height,
-            lottery_height,
-        });
-    }
-
-    if env.block.time >= state.expiratoin {
-        return Err(ContractError::AlreadyExpired {});
-    }
-
-    // Can't buy lottery after lottery is already closed
-    if state.is_closed() {
-        return Err(ContractError::LotteryAlreadyClosed {
-            address: contract_addr.to_owned(),
-        });
-    }
+    validate_buy(deps.storage, &state, info, denom, env)?;
 
     let sender = &info.sender;
-    let player = PLAYERS.may_load(deps.storage, sender)?;
 
-    // Only can buy lottery once
-    match player {
-        Some(_) => Err(ContractError::LotteryCanBuyOnce {
-            player: sender.clone(),
-            lottery: contract_addr.to_owned(),
-        }),
-        None => {
-            state.player_count += 1;
-            STATE.save(deps.storage, &state)?;
+    validate_double_buy(deps.as_ref(), PLAYERS, sender)?;
 
-            PLAYERS.save(
-                deps.storage,
-                sender,
-                &PlayerInfo {
-                    player_addr: sender.clone(),
-                    lottery_addr: env.contract.address.clone(),
-                    height: current_height,
-                    buy_at: current_height,
-                    memo,
-                },
-            )?;
+    update_state_with_buy(deps, env, &mut state, sender, memo)?;
 
-            PLAYER_COUNTER.update(deps.storage, |c| -> StdResult<u32> { Ok(c + 1) })?;
+    let attributes = vec![
+        attr("action", "buy_ticket"),
+        attr("sender", sender.as_str()),
+        attr("denom", denom),
+    ];
 
-            let attributes = vec![
-                attr("action", "buy_ticket"),
-                attr("sender", sender.as_str()),
-                attr("denom", denom),
-                attr("amount", amount.to_string()),
-                attr("height", current_height.to_string()),
-            ];
-
-            Ok(Response::new().add_attributes(attributes))
-        }
-    }
+    Ok(Response::new().add_attributes(attributes))
 }
 
 pub fn draw_lottery(
@@ -168,37 +104,19 @@ pub fn draw_lottery(
     let mut state = STATE.load(deps.storage)?;
 
     let owner = OWNER.load(deps.storage)?;
-
-    if owner != sender {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    if state.is_closed() {
-        return Err(ContractError::LotteryAlreadyClosed {
-            address: env.contract.address.to_owned(),
-        });
-    }
-
-    let current_height = env.block.height;
-    let lottery_height = state.height;
-
-    // Only can buy lottery after created block height
-    if lottery_height > current_height {
-        return Err(ContractError::LotteryHeightNotMatch {
-            current_height,
-            lottery_height,
-        });
-    }
-
-    let current_time = env.block.time;
     let player_counter = PLAYER_COUNTER.load(deps.storage)?;
 
-    // if lottery is expired or player exceed maximum, lottery can be drawed
-    if (current_time < state.expiratoin) && (player_counter < state.max_players) {
-        return Err(ContractError::LotteryIsActiving {});
-    }
+    validate_draw(&state, &owner, info, env, player_counter)?;
 
-    let winner = choose_winner_infos(PLAYERS, deps.storage)?;
+    let current_height = env.block.height;
+    let transaction = env.transaction.as_ref().map(|t| t.index.to_string());
+
+    // Change status to `Closed`
+    state.status = GameStatus::Closed;
+
+    state.seed = hash::seed::finalize(&state.seed, sender, env.block.height, &transaction);
+
+    let winner = choose_winner_infos(deps.storage, PLAYERS, IDX_2_ADDR, &state, player_counter)?;
 
     if winner.is_empty() {
         state.winner = vec![];
@@ -212,9 +130,6 @@ pub fn draw_lottery(
         };
         state.winner.push(winner_info);
     }
-
-    // Change status to `Closed`
-    state.status = GameStatus::Closed;
 
     STATE.save(deps.storage, &state)?;
 
@@ -231,6 +146,7 @@ pub fn claim_lottery(deps: DepsMut, info: &MessageInfo) -> Result<Response, Cont
     let sender = &info.sender;
     let state = STATE.load(deps.storage)?;
 
+    // check lottery is closed and sender is winner
     if state.is_closed() && state.winner.first().map(|w| &w.address) == Some(sender) {
         OWNER.save(deps.storage, sender)?;
 
@@ -255,9 +171,7 @@ pub fn transfer(
     let sender = &info.sender;
     let owner = OWNER.load(deps.storage)?;
 
-    if sender != owner {
-        return Err(ContractError::Unauthorized {});
-    }
+    validate_owner(&owner, info)?;
 
     let recipient: Addr = deps.api.addr_validate(&recipient)?;
     let height = env.block.height;
@@ -286,14 +200,11 @@ pub fn withdraw(
 
     let owner = OWNER.load(deps.storage)?;
 
-    if sender != owner {
-        return Err(ContractError::Unauthorized {});
-    }
+    validate_owner(&owner, info)?;
 
     let balance = deps.querier.query_balance(&env.contract.address, denom)?;
-    if balance.amount.u128() < amount {
-        return Err(ContractError::BalanceTooSmall { balance });
-    }
+
+    validate_balance(&balance, amount)?;
 
     let recipient = recipient.unwrap_or(sender.to_string());
 
@@ -315,12 +226,69 @@ pub fn withdraw(
         .add_attributes(attributes))
 }
 
-// TODO Choose winner use random number in players
+// Choose winner use random number in players
 pub fn choose_winner_infos(
-    players: Map<&Addr, PlayerInfo>,
     storage: &dyn Storage,
+    players: Map<&Addr, PlayerInfo>,
+    idx_addr: Map<u64, Addr>,
+    state: &State,
+    player_counter: u64,
 ) -> Result<Vec<PlayerInfo>, ContractError> {
-    // TODO get first
-    let winner = players.first(storage)?;
-    Ok(winner.into_iter().map(|(_, player)| player).collect())
+    // validate_winner_selection(state)?;
+
+    if state.player_count == 0 {
+        Ok(vec![])
+    } else if state.player_count == 1 {
+        let winner = players.first(storage)?;
+        Ok(winner.into_iter().map(|(_, player)| player).collect())
+    } else {
+        let seed = state.seed.as_str();
+        let seed_num = hash_to_u64(seed);
+
+        println!("The seed num is {:?}", seed_num);
+
+        let idx = seed_num % player_counter + 1;
+        println!("The idx is: {:?}", idx);
+
+        let address = idx_addr.may_load(storage, idx)?.unwrap();
+        let player_info = players.load(storage, &address)?;
+        Ok(vec![player_info])
+    }
+}
+
+fn update_state_with_buy(
+    deps: DepsMut,
+    env: &Env,
+    state: &mut State,
+    sender: &Addr,
+    memo: Option<String>,
+) -> Result<(), ContractError> {
+    let current_height = env.block.height;
+    let lottery_addr = &env.contract.address;
+
+    let player_counter = PLAYER_COUNTER.load(deps.storage)? + 1;
+
+    state.seed = hash::seed::update(&state.seed, sender, player_counter, current_height, &memo);
+
+    state.player_count += 1;
+
+    STATE.save(deps.storage, state)?;
+
+    PLAYERS.save(
+        deps.storage,
+        sender,
+        &PlayerInfo {
+            player_addr: sender.clone(),
+            lottery_addr: lottery_addr.to_owned(),
+            height: current_height,
+            buy_at: current_height,
+            memo,
+        },
+    )?;
+
+    PLAYER_COUNTER.save(deps.storage, &player_counter)?;
+
+    IDX_2_ADDR.save(deps.storage, player_counter, sender)?;
+
+    Ok(())
 }

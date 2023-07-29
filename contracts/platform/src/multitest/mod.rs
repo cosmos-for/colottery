@@ -85,7 +85,7 @@ impl PlatformContract {
         unit_price_denom: &str,
         period: &str,
         selection: WinnerSelection,
-        max_players: u32,
+        max_players: u64,
         label: &str,
     ) -> AnyResult<Option<InstantiationData>> {
         let msg = ExecuteMsg::CreateLottery {

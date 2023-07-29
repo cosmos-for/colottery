@@ -1,3 +1,4 @@
+pub mod auth;
 pub mod contract;
 mod error;
 

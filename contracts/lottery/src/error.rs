@@ -45,14 +45,14 @@ pub enum ContractError {
     #[error("Unsupport selection: {:?}", selection)]
     UnSupportedWinnerSelection { selection: WinnerSelection },
 
-    #[error("{player} Only can buy a lottery: {lottery} once")]
-    LotteryCanBuyOnce { player: Addr, lottery: Addr },
+    #[error("{player} Only can buy a lottery once")]
+    LotteryCanBuyOnce { player: Addr },
 
     #[error("The payment funds is not enough")]
     PaymentNotEnough { amount: Uint128 },
 
     #[error("The lottery player is full: {max_players}")]
-    PlayerExceededMaximum { max_players: u32 },
+    PlayerExceededMaximum { max_players: u64 },
 
     #[error("The lottery is activing, can't draw")]
     LotteryIsActiving {},
@@ -69,7 +69,7 @@ pub enum ContractError {
     },
 
     #[error("Lottery is already closed")]
-    LotteryAlreadyClosed { address: Addr },
+    LotteryAlreadyClosed {},
 
     #[error("The contract has nothing to claim")]
     NothingToClaim {},

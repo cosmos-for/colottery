@@ -16,7 +16,7 @@ pub struct InstantiateMsg {
     pub unit_price_denom: String,
     pub period: String,
     pub selection: WinnerSelection,
-    pub max_players: u32,
+    pub max_players: u64,
 }
 
 impl InstantiateMsg {
@@ -27,7 +27,7 @@ impl InstantiateMsg {
         unit_price_denom: impl Into<String>,
         period: impl Into<String>,
         selection: WinnerSelection,
-        max_players: u32,
+        max_players: u64,
     ) -> Self {
         Self {
             name: name.into(),

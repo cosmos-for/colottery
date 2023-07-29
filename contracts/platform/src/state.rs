@@ -44,7 +44,7 @@ pub struct LotteryInfo {
     pub unit_price: Coin,
     pub period: LotteryPeriod,
     pub selection: WinnerSelection,
-    pub max_players: u32,
+    pub max_players: u64,
     pub contract_addr: Addr,
 }
 
