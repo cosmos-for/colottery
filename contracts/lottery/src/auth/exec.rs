@@ -1,15 +1,19 @@
-use cosmwasm_std::{ensure, Addr, Env, MessageInfo, Uint128};
+use cosmwasm_std::{ensure, Addr, Coin, Deps, Env, MessageInfo, Storage, Uint128};
+use cw_storage_plus::Map;
 use cw_utils::must_pay;
 
-use crate::{state::State, ContractError};
+use crate::{
+    state::{PlayerInfo, State, PLAYER_COUNTER},
+    ContractError,
+};
 
 pub type UnitResult = Result<(), ContractError>;
 
 pub fn validate_buy(
+    storage: &dyn Storage,
     state: &State,
     info: &MessageInfo,
     denom: &str,
-    player_counter: u64,
     env: &Env,
 ) -> UnitResult {
     let amount = must_pay(info, denom)?;
@@ -20,7 +24,7 @@ pub fn validate_buy(
 
     validate_price(state, amount)?;
 
-    validate_player_counter(state, player_counter)?;
+    validate_player_counter(storage, state)?;
 
     validate_status(state)?;
 
@@ -73,7 +77,8 @@ pub fn validate_price(state: &State, payment_amount: Uint128) -> UnitResult {
     Ok(())
 }
 
-pub fn validate_player_counter(state: &State, player_counter: u64) -> UnitResult {
+pub fn validate_player_counter(storage: &dyn Storage, state: &State) -> UnitResult {
+    let player_counter = PLAYER_COUNTER.load(storage)?;
     ensure!(
         player_counter < state.max_players,
         ContractError::PlayerExceededMaximum {
@@ -127,6 +132,32 @@ pub fn validate_timestamp_or_activing(state: &State, env: &Env, player_counter: 
     ensure!(
         env.block.time >= state.expiratoin || player_counter >= state.player_count,
         ContractError::LotteryIsActiving {}
+    );
+
+    Ok(())
+}
+
+pub fn validate_balance(balance: &Coin, to_withdraw: u128) -> UnitResult {
+    ensure!(
+        balance.amount.u128() >= to_withdraw,
+        ContractError::BalanceTooSmall {
+            balance: balance.to_owned()
+        }
+    );
+    Ok(())
+}
+
+pub fn validate_double_buy(
+    deps: Deps,
+    players: Map<&Addr, PlayerInfo>,
+    sender: &Addr,
+) -> UnitResult {
+    let player_info = players.may_load(deps.storage, sender)?;
+    ensure!(
+        player_info.is_none(),
+        ContractError::LotteryCanBuyOnce {
+            player: sender.clone(),
+        }
     );
 
     Ok(())
