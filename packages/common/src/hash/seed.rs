@@ -1,4 +1,4 @@
-use base64ct::{Base64, Encoding};
+// use base64ct::{Base64, Encoding};
 use cosmwasm_std::Addr;
 use sha2::{Digest, Sha256};
 
@@ -7,7 +7,9 @@ pub fn init(id: &str, block_height: u64) -> String {
     sha256.update(id.as_bytes());
     sha256.update(block_height.to_le_bytes());
     let hash = sha256.finalize();
-    Base64::encode_string(&hash)
+
+    format!("{:?}", hash)
+    // Base64::encode_string(&hash)
 }
 
 pub fn update(
@@ -26,7 +28,9 @@ pub fn update(
         sha256.update(lucky_phrase_str.as_bytes());
     }
     let hash = sha256.finalize();
-    Base64::encode_string(&hash)
+
+    format!("{:?}", hash)
+    // Base64::encode_string(&hash)
 }
 
 pub fn finalize(
@@ -43,5 +47,7 @@ pub fn finalize(
         sha256.update(lucky_phrase_str.as_bytes());
     }
     let hash = sha256.finalize();
-    Base64::encode_string(&hash)
+
+    format!("{:?}", hash)
+    // Base64::encode_string(&hash)
 }
