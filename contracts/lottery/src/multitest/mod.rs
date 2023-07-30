@@ -12,6 +12,9 @@ use crate::{
     state::WinnerSelection,
 };
 
+pub const ARCH_DEMON: &str = "aconst";
+pub const ARCH_DECIMALS: u8 = 18;
+
 #[derive(Clone, Debug, Copy)]
 pub struct LotteryCodeId(u64);
 

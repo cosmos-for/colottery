@@ -12,39 +12,37 @@ use crate::{
         GameStatus, PlayerInfo, State, WinnerInfo, IDX_2_ADDR, OWNER, PLAYERS, PLAYER_COUNTER,
         STATE,
     },
-    ContractError, ARCH_DEMON,
+    ContractError, Cw721MetadataContract,
 };
 
-// type Cw721BaseContract<'a> = Cw721Contract<'a, Extension, Empty, Empty, Empty>;
+pub trait BaseExecute {
+    fn base_execute(
+        &self,
+        deps: DepsMut,
+        env: Env,
+        info: MessageInfo,
+        msg: ExecuteMsg,
+    ) -> Result<Response, ContractError>;
+}
 
-// pub trait BaseExecute {
-//     fn base_execute(
-//         &self,
-//         deps: DepsMut,
-//         env: Env,
-//         info: MessageInfo,
-//         msg: ExecuteMsg,
-//     ) -> Result<Response, ContractError>;
-// }
+impl<'a> BaseExecute for Cw721MetadataContract<'a> {
+    fn base_execute(
+        &self,
+        deps: DepsMut,
+        env: Env,
+        info: MessageInfo,
+        msg: ExecuteMsg,
+    ) -> Result<Response, ContractError> {
+        let cw721_msg = msg.try_into()?;
 
-// impl<'a> BaseExecute for Cw721BaseContract<'a> {
-//     fn base_execute(
-//         &self,
-//         deps: DepsMut,
-//         env: Env,
-//         info: MessageInfo,
-//         msg: ExecuteMsg,
-//     ) -> Result<Response, ContractError> {
-//         let cw721_msg = msg.try_into()?;
+        let execute_res = self.execute(deps, env, info, cw721_msg);
 
-//         let execute_res = self.execute(deps, env, info, cw721_msg);
-
-//         match execute_res {
-//             Ok(res) => Ok(res),
-//             Err(err) => Err(ContractError::try_from(err)?),
-//         }
-//     }
-// }
+        match execute_res {
+            Ok(res) => Ok(res),
+            Err(err) => Err(ContractError::try_from(err)?),
+        }
+    }
+}
 
 pub fn execute(
     deps: DepsMut,
@@ -53,6 +51,8 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     use ExecuteMsg::*;
+
+    let contract = Cw721MetadataContract::default();
 
     match msg {
         BuyTicket { denom, memo } => buy_ticket(deps, &env, &info, &denom, memo),
@@ -64,6 +64,7 @@ pub fn execute(
             recipient,
         } => withdraw(deps, &env, &info, amount, denom.as_str(), recipient),
         Transfer { recipient } => transfer(deps, &env, &info, recipient),
+        _ => contract.base_execute(deps, env, info, msg),
     }
 }
 
@@ -123,7 +124,7 @@ pub fn draw_lottery(
     } else {
         let balances = deps
             .querier
-            .query_balance(&env.contract.address, ARCH_DEMON)?;
+            .query_balance(&env.contract.address, &state.unit_price.denom)?;
         let winner_info = WinnerInfo {
             address: winner.first().as_ref().unwrap().player_addr.clone(),
             prize: vec![balances],

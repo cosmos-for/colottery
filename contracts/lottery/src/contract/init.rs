@@ -1,18 +1,17 @@
 use common::hash;
 use cosmwasm_std::{attr, coin, DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
-use cw721_base::InstantiateMsg as Cw721InstantiateMsg;
 
 use crate::{
     msg::InstantiateMsg,
     state::{GameStatus, LotteryPeriod, State, OWNER, PLAYER_COUNTER, STATE},
-    ContractError, Cw721MetadataContract,
+    ContractError, Cw721InstantiateMsg, Cw721MetadataContract,
 };
 
 use super::{CONTRACT_NAME, CONTRACT_VERSION};
 
 pub fn instantiate(
-    mut deps: DepsMut,
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
@@ -69,7 +68,8 @@ pub fn instantiate(
         attr("sender", sender.as_str()),
     ];
 
-    Cw721MetadataContract::default().instantiate(deps.branch(), env, info, init_msg)?;
+    let cw721_contract: Cw721MetadataContract = Cw721MetadataContract::default();
+    cw721_contract.instantiate(deps, env, info, init_msg)?;
 
     Ok(Response::new().add_attributes(attrs))
 }

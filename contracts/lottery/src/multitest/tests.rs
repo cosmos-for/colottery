@@ -4,9 +4,9 @@ mod test {
     use cw_multi_test::App;
 
     use crate::{
-        multitest::{alice, bob, owner, LotteryCodeId, LotteryContract},
+        multitest::{alice, bob, owner, LotteryCodeId, LotteryContract, ARCH_DEMON},
         state::{GameStatus, WinnerSelection},
-        ContractError, ARCH_DEMON,
+        ContractError,
     };
 
     #[test]
