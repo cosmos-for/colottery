@@ -1,8 +1,8 @@
 use std::str::FromStr;
 
-use common::helper::{
-    get_last_day_month, get_last_day_week, get_last_day_year, get_secs_of_hour_22, timestamp_to_utc,
-};
+// use common::helper::{
+//     get_last_day_month, get_last_day_week, get_last_day_year, get_secs_of_hour_22, timestamp_to_utc,
+// };
 
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Coin, Timestamp};
@@ -122,26 +122,26 @@ impl LotteryPeriod {
     // Only support: Hour, Day
     // Other coming soon
     pub fn get_deadline(&self, created_at: Timestamp) -> Timestamp {
-        // match self {
-        //     Self::Hour {} => created_at.plus_hours(1),
-        //     Self::Day {} => created_at.plus_days(1),
-        //     _ => created_at.plus_days(1),
-        // }
         match self {
             Self::Hour {} => created_at.plus_hours(1),
-            Self::Day {} => Timestamp::from_seconds(get_secs_of_hour_22(
-                timestamp_to_utc(created_at).date_naive(),
-            )),
-            Self::Week {} => Timestamp::from_seconds(get_secs_of_hour_22(get_last_day_week(
-                timestamp_to_utc(created_at),
-            ))),
-            Self::Month {} => Timestamp::from_seconds(get_secs_of_hour_22(get_last_day_month(
-                timestamp_to_utc(created_at),
-            ))),
-            Self::Year {} => Timestamp::from_seconds(get_secs_of_hour_22(get_last_day_year(
-                timestamp_to_utc(created_at),
-            ))),
+            Self::Day {} => created_at.plus_days(1),
+            _ => created_at.plus_days(1),
         }
+        // match self {
+        //     Self::Hour {} => created_at.plus_hours(1),
+        //     Self::Day {} => Timestamp::from_seconds(get_secs_of_hour_22(
+        //         timestamp_to_utc(created_at).date_naive(),
+        //     )),
+        //     Self::Week {} => Timestamp::from_seconds(get_secs_of_hour_22(get_last_day_week(
+        //         timestamp_to_utc(created_at),
+        //     ))),
+        //     Self::Month {} => Timestamp::from_seconds(get_secs_of_hour_22(get_last_day_month(
+        //         timestamp_to_utc(created_at),
+        //     ))),
+        //     Self::Year {} => Timestamp::from_seconds(get_secs_of_hour_22(get_last_day_year(
+        //         timestamp_to_utc(created_at),
+        //     ))),
+        // }
     }
 }
 

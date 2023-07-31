@@ -1,8 +1,8 @@
-use common::hash;
 use cosmwasm_std::{attr, coin, DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
 
 use crate::{
+    hash,
     msg::InstantiateMsg,
     state::{GameStatus, LotteryPeriod, State, OWNER, PLAYER_COUNTER, STATE},
     ContractError, Cw721InstantiateMsg, Cw721MetadataContract,
@@ -48,7 +48,7 @@ pub fn instantiate(
         player_count: 0,
         max_players: msg.max_players,
         status: GameStatus::Activing,
-        seed: hash::seed::init(env.contract.address.as_str(), env.block.height),
+        seed: hash::init(env.contract.address.as_str(), env.block.height),
         winner: vec![],
         extension: Default::default(),
     };

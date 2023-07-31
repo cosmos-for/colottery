@@ -1,6 +1,7 @@
 pub mod auth;
 pub mod contract;
 mod error;
+pub mod hash;
 
 pub mod msg;
 pub mod state;

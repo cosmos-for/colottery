@@ -1,4 +1,3 @@
-use common::hash::{self, hash_to_u64};
 use cosmwasm_std::{
     attr, coins, to_binary, Addr, BankMsg, DepsMut, Env, MessageInfo, Response, Storage, WasmMsg,
 };
@@ -9,6 +8,7 @@ use crate::{
     auth::exec::{
         validate_balance, validate_buy, validate_double_buy, validate_draw, validate_owner,
     },
+    hash,
     msg::ExecuteMsg,
     state::{
         GameStatus, PlayerInfo, State, WinnerInfo, IDX_2_ADDR, OWNER, PLAYERS, PLAYER_COUNTER,
@@ -123,7 +123,7 @@ pub fn draw_lottery(
     // Change status to `Closed`
     state.status = GameStatus::Closed;
 
-    state.seed = hash::seed::finalize(&state.seed, sender, env.block.height, &transaction);
+    state.seed = hash::finalize(&state.seed, sender, env.block.height, &transaction);
 
     let winner = choose_winner_infos(deps.storage, PLAYERS, IDX_2_ADDR, &state, player_counter)?;
 
@@ -252,7 +252,7 @@ pub fn choose_winner_infos(
         Ok(winner.into_iter().map(|(_, player)| player).collect())
     } else {
         let seed = state.seed.as_str();
-        let seed_num = hash_to_u64(seed);
+        let seed_num = hash::hash_to_u64(seed);
 
         println!("The seed num is {:?}", seed_num);
 
@@ -277,7 +277,7 @@ fn update_state_with_buy(
 
     let player_counter = PLAYER_COUNTER.load(deps.storage)? + 1;
 
-    state.seed = hash::seed::update(&state.seed, sender, player_counter, current_height, &memo);
+    state.seed = hash::update(&state.seed, sender, player_counter, current_height, &memo);
 
     state.player_count += 1;
 
