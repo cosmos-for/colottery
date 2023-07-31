@@ -2,6 +2,7 @@
 mod test {
     use std::marker::PhantomData;
 
+    use chrono::Utc;
     use cosmwasm_std::{coin, coins, Empty};
     use cw_multi_test::App;
 
@@ -24,6 +25,7 @@ mod test {
         let unit_price = 100;
         let denom = ARCH_DEMON;
         let period = "hour";
+        let expiration = Utc::now().timestamp() as u64;
         let selection = WinnerSelection::Jackpot {};
         let max_players = 3;
         let label = "Lottery label";
@@ -36,6 +38,7 @@ mod test {
                 unit_price,
                 denom,
                 period,
+                expiration,
                 selection,
                 max_players,
                 label,
@@ -83,6 +86,7 @@ mod test {
         let unit_price = 100;
         let denom = ARCH_DEMON;
         let period = "hour";
+        let expiration = Utc::now().timestamp() as u64;
         let selection = WinnerSelection::Jackpot {};
         let max_players = 2;
         let label = "Lottery label";
@@ -95,6 +99,7 @@ mod test {
                 unit_price,
                 denom,
                 period,
+                expiration,
                 selection,
                 max_players,
                 label,
@@ -202,6 +207,7 @@ mod test {
         let unit_price = 100;
         let denom = ARCH_DEMON;
         let period = "hour";
+        let expiration = Utc::now().timestamp() as u64;
         let selection = WinnerSelection::Jackpot {};
         let max_players = 3;
         let label = "Lottery label";
@@ -214,6 +220,7 @@ mod test {
                 unit_price,
                 denom,
                 period,
+                expiration,
                 selection,
                 max_players,
                 label,

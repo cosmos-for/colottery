@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod test {
+    use chrono::Utc;
     use cosmwasm_std::{coin, coins};
     use cw_multi_test::App;
     use lottery::{
@@ -54,6 +55,7 @@ mod test {
         let unit_price_amount = 100;
         let unit_price_denom = ARCH_DEMON;
         let period = "hour";
+        let expiration = Utc::now().timestamp() as u64;
         let selection = WinnerSelection::Jackpot {};
         let max_players = 3;
         let label = "Lottery label";
@@ -67,6 +69,7 @@ mod test {
                 unit_price_amount,
                 unit_price_denom,
                 period,
+                expiration,
                 selection,
                 max_players,
                 label,
@@ -122,6 +125,7 @@ mod test {
         let unit_price_amount = 100;
         let unit_price_denom = ARCH_DEMON;
         let period = "hour";
+        let expiration = Utc::now().timestamp() as u64;
         let selection = WinnerSelection::Jackpot {};
         let max_players = 2;
         let label = "Lottery label";
@@ -135,6 +139,7 @@ mod test {
                 unit_price_amount,
                 unit_price_denom,
                 period,
+                expiration,
                 selection,
                 max_players,
                 label,
@@ -256,6 +261,7 @@ mod test {
         let unit_price_amount = 100;
         let unit_price_denom = ARCH_DEMON;
         let period = "hour";
+        let expiration = Utc::now().timestamp() as u64;
         let selection = WinnerSelection::Jackpot {};
         let max_players = 3;
         let label = "Lottery label";
@@ -268,6 +274,7 @@ mod test {
             unit_price_amount,
             unit_price_denom,
             period,
+            expiration,
             selection,
             max_players,
             label,
