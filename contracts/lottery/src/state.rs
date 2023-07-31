@@ -217,43 +217,4 @@ mod tests {
         assert_eq!(LotteryPeriod::Year {}, period_y);
         assert!(period_y.is_year());
     }
-
-    // #[test]
-    // fn get_deadline_should_works() {
-    // let day = LotteryPeriod::Day {};
-    // let utc_now = Utc::now().timestamp() as u64;
-    // println!("utc now is: {:?}", utc_now);
-    // let now = Timestamp::from_seconds(utc_now);
-
-    // let deadline = day.get_deadline(now);
-    // println!("deadline is: {:?}", deadline.seconds());
-    // assert_eq!(deadline.seconds(), now.plus_days(1).seconds());
-
-    //     let day = LotteryPeriod::Day {};
-    //     let utc_now = Utc::now();
-    //     println!("utc now is: {:?}", utc_now.timestamp());
-
-    //     let utc_22 = utc_now.date_naive().and_hms_opt(22, 0, 0);
-    //     let now_secs = utc_22.map(|t| t.timestamp()).unwrap() as u64;
-    //     println!("utc sces is: {:?}", now_secs);
-
-    //     let now = Timestamp::from_seconds(now_secs);
-
-    //     println!("bft now seconds: {}", now.seconds());
-
-    //     assert_eq!(now_secs, now.seconds());
-
-    //     let deadline = day.get_deadline(now);
-    //     println!("deadline is: {:?}", deadline.seconds());
-    //     assert_eq!(deadline.seconds(), now.seconds());
-
-    //     let hour = LotteryPeriod::Hour {};
-    //     let utc_now = Utc::now().timestamp() as u64;
-    //     println!("utc now is: {:?}", utc_now);
-    //     let now = Timestamp::from_seconds(utc_now);
-
-    //     let deadline = hour.get_deadline(now);
-    //     println!("deadline is: {:?}", deadline.seconds());
-    //     assert_eq!(deadline.seconds(), now.plus_hours(1).seconds());
-    // }
 }

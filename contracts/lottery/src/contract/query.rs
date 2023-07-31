@@ -1,4 +1,4 @@
-use cosmwasm_std::{to_binary, Binary, Deps, Env, StdResult};
+use cosmwasm_std::{to_binary, Binary, Coin, Deps, Env, StdResult};
 
 use cw721_base::entry::query as cw721_query;
 
@@ -9,11 +9,13 @@ use crate::{
 
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Owner {} => owner(deps),
-        QueryMsg::Winner {} => winner(deps),
-        QueryMsg::CurrentState {} => current_state(deps),
-        QueryMsg::Balances {} => balances(deps, &env),
-        QueryMsg::PlayInfo { address } => play_info(deps, &address),
+        QueryMsg::Owner {} => owner(deps).and_then(|resp| to_binary(&resp)),
+        QueryMsg::Winner {} => winner(deps).and_then(|resp| to_binary(&resp)),
+        QueryMsg::CurrentState {} => current_state(deps).and_then(|resp| to_binary(&resp)),
+        QueryMsg::Balances {} => balances(deps, &env).and_then(|cs| to_binary(&cs)),
+        QueryMsg::PlayInfo { address } => {
+            play_info(deps, &address).and_then(|info| to_binary(&info))
+        }
 
         _ => {
             let query_msg = msg.into();
@@ -22,31 +24,29 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
-pub fn owner(deps: Deps) -> StdResult<Binary> {
+pub fn owner(deps: Deps) -> StdResult<OwnerResp> {
     let owner = OWNER.load(deps.storage)?;
-    to_binary(&OwnerResp { owner })
+    Ok(OwnerResp { owner })
 }
 
-pub fn winner(deps: Deps) -> StdResult<Binary> {
+pub fn winner(deps: Deps) -> StdResult<WinnerResp> {
     let state = STATE.load(deps.storage)?;
-    to_binary(&WinnerResp {
+    Ok(WinnerResp {
         winner: state.winner,
     })
 }
 
-pub fn current_state(deps: Deps) -> StdResult<Binary> {
+pub fn current_state(deps: Deps) -> StdResult<CurrentStateResp> {
     let state = STATE.load(deps.storage)?;
-    to_binary(&CurrentStateResp { state })
+    Ok(CurrentStateResp { state })
 }
 
-pub fn balances(deps: Deps, env: &Env) -> StdResult<Binary> {
-    deps.querier
-        .query_all_balances(&env.contract.address)
-        .and_then(|balances| to_binary(&balances))
+pub fn balances(deps: Deps, env: &Env) -> StdResult<Vec<Coin>> {
+    deps.querier.query_all_balances(&env.contract.address)
 }
 
-pub fn play_info(deps: Deps, address: &str) -> StdResult<Binary> {
+pub fn play_info(deps: Deps, address: &str) -> StdResult<PlayInfoResp> {
     let address = deps.api.addr_validate(address)?;
     let player = PLAYERS.may_load(deps.storage, &address)?;
-    to_binary(&PlayInfoResp { info: player })
+    Ok(PlayInfoResp { info: player })
 }

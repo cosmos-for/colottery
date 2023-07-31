@@ -21,6 +21,7 @@ pub struct InstantiateMsg {
 }
 
 impl InstantiateMsg {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         name: impl Into<String>,
         symobl: impl Into<String>,

@@ -2,7 +2,7 @@ use cosmwasm_std::{Addr, Coin, StdError, Uint128};
 use cw_utils::PaymentError;
 use thiserror::Error;
 
-use crate::state::WinnerSelection;
+use crate::{msg::QueryMsg, state::WinnerSelection};
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
@@ -111,6 +111,9 @@ pub enum ContractError {
 
     #[error("Approval not found for: {spender}")]
     ApprovalNotFound { spender: String },
+
+    #[error("Unsupported query message: {:?}", msg)]
+    QueryMsgNotSupported { msg: QueryMsg },
 }
 
 impl From<cw20_base::ContractError> for ContractError {
