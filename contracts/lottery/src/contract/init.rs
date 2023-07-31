@@ -1,4 +1,4 @@
-use cosmwasm_std::{attr, coin, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{attr, coin, ensure, DepsMut, Env, MessageInfo, Response, Timestamp};
 use cw2::set_contract_version;
 
 use crate::{
@@ -33,8 +33,18 @@ pub fn instantiate(
 
     let sender = &info.sender;
     let created_at = env.block.time;
+    let expiration_secs = msg.expiration;
     let period: LotteryPeriod = msg.period.parse()?;
-    let expiration = period.get_deadline(created_at);
+
+    ensure!(
+        created_at.seconds() <= expiration_secs,
+        ContractError::InstantiateExpirationInvalid {
+            expiration_secs,
+            created_at: created_at.seconds()
+        }
+    );
+
+    let expiration = Timestamp::from_seconds(expiration_secs);
 
     let config = State {
         name: msg.name.clone(),

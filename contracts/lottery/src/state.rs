@@ -186,7 +186,6 @@ pub const IDX_2_ADDR: Map<u64, Addr> = Map::new("idx_2_addr");
 
 #[cfg(test)]
 mod tests {
-    use chrono::Utc;
 
     use super::*;
 

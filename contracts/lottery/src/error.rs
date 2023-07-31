@@ -57,6 +57,12 @@ pub enum ContractError {
     #[error("The lottery is activing, can't draw")]
     LotteryIsActiving {},
 
+    #[error("The expiration: {expiration_secs} in instantiate message is not valid, must greater than {created_at}")]
+    InstantiateExpirationInvalid {
+        expiration_secs: u64,
+        created_at: u64,
+    },
+
     #[error("error(0)")]
     PaymentError(#[from] PaymentError),
 
