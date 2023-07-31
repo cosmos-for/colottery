@@ -1,13 +1,20 @@
 #[cfg(test)]
 mod test {
-    use cosmwasm_std::{coin, coins};
+    use std::marker::PhantomData;
+
+    use chrono::Utc;
+    use cosmwasm_std::{coin, coins, Empty};
     use cw_multi_test::App;
 
     use crate::{
-        multitest::{alice, bob, owner, LotteryCodeId, LotteryContract},
+        multitest::{alice, bob, owner, LotteryCodeId, LotteryContract, ARCH_DEMON},
         state::{GameStatus, WinnerSelection},
-        ContractError, ARCH_DEMON,
+        ContractError,
     };
+
+    use cw721_base::helpers::Cw721Contract;
+
+    // use cw721_base::multi_tests;
 
     #[test]
     fn instantiate_should_works() {
@@ -18,6 +25,7 @@ mod test {
         let unit_price = 100;
         let denom = ARCH_DEMON;
         let period = "hour";
+        let expiration = Utc::now().timestamp() as u64;
         let selection = WinnerSelection::Jackpot {};
         let max_players = 3;
         let label = "Lottery label";
@@ -30,6 +38,7 @@ mod test {
                 unit_price,
                 denom,
                 period,
+                expiration,
                 selection,
                 max_players,
                 label,
@@ -77,6 +86,7 @@ mod test {
         let unit_price = 100;
         let denom = ARCH_DEMON;
         let period = "hour";
+        let expiration = Utc::now().timestamp() as u64;
         let selection = WinnerSelection::Jackpot {};
         let max_players = 2;
         let label = "Lottery label";
@@ -89,11 +99,15 @@ mod test {
                 unit_price,
                 denom,
                 period,
+                expiration,
                 selection,
                 max_players,
                 label,
             )
             .unwrap();
+
+        let cw721_contract: Cw721Contract<Empty, Empty> =
+            Cw721Contract(contract.addr(), PhantomData, PhantomData);
 
         // Buy ticket
         contract
@@ -115,6 +129,12 @@ mod test {
                 &coins(100, ARCH_DEMON),
             )
             .unwrap();
+
+        let nft_resp = cw721_contract.owner_of(&app.wrap(), "1", true).unwrap();
+        assert_eq!(nft_resp.owner, alice());
+
+        let nft_resp = cw721_contract.owner_of(&app.wrap(), "2", true).unwrap();
+        assert_eq!(nft_resp.owner, bob());
 
         let balances = LotteryContract::query_balances(&app, contract.addr()).unwrap();
         assert_eq!(balances, coins(200, ARCH_DEMON));
@@ -187,6 +207,7 @@ mod test {
         let unit_price = 100;
         let denom = ARCH_DEMON;
         let period = "hour";
+        let expiration = Utc::now().timestamp() as u64;
         let selection = WinnerSelection::Jackpot {};
         let max_players = 3;
         let label = "Lottery label";
@@ -199,6 +220,7 @@ mod test {
                 unit_price,
                 denom,
                 period,
+                expiration,
                 selection,
                 max_players,
                 label,

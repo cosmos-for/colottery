@@ -7,10 +7,11 @@ use lottery::state::WinnerSelection;
 pub enum ExecuteMsg {
     CreateLottery {
         name: String,
-        symobl: String,
+        symbol: String,
         unit_price_amount: u128,
         unit_price_denom: String,
         period: String,
+        expiration: u64,
         selection: WinnerSelection,
         max_players: u64,
         label: String,

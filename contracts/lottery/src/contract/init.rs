@@ -1,18 +1,17 @@
-use common::hash;
-use cosmwasm_std::{attr, coin, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{attr, coin, ensure, DepsMut, Env, MessageInfo, Response, Timestamp};
 use cw2::set_contract_version;
-use cw721_base::InstantiateMsg as Cw721InstantiateMsg;
 
 use crate::{
+    hash,
     msg::InstantiateMsg,
     state::{GameStatus, LotteryPeriod, State, OWNER, PLAYER_COUNTER, STATE},
-    ContractError, Cw721MetadataContract,
+    ContractError, Cw721InstantiateMsg, Cw721MetadataContract,
 };
 
 use super::{CONTRACT_NAME, CONTRACT_VERSION};
 
 pub fn instantiate(
-    mut deps: DepsMut,
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
@@ -34,8 +33,18 @@ pub fn instantiate(
 
     let sender = &info.sender;
     let created_at = env.block.time;
+    let expiration_secs = msg.expiration;
     let period: LotteryPeriod = msg.period.parse()?;
-    let expiration = period.get_deadline(created_at);
+
+    ensure!(
+        created_at.seconds() <= expiration_secs,
+        ContractError::InstantiateExpirationInvalid {
+            expiration_secs,
+            created_at: created_at.seconds()
+        }
+    );
+
+    let expiration = Timestamp::from_seconds(expiration_secs);
 
     let config = State {
         name: msg.name.clone(),
@@ -49,7 +58,7 @@ pub fn instantiate(
         player_count: 0,
         max_players: msg.max_players,
         status: GameStatus::Activing,
-        seed: hash::seed::init(env.contract.address.as_str(), env.block.height),
+        seed: hash::init(env.contract.address.as_str(), env.block.height),
         winner: vec![],
         extension: Default::default(),
     };
@@ -61,7 +70,7 @@ pub fn instantiate(
     let init_msg = Cw721InstantiateMsg {
         name: msg.name,
         symbol: msg.symobl,
-        minter: info.sender.to_string(),
+        minter: env.contract.address.to_string(),
     };
 
     let attrs = vec![
@@ -69,7 +78,8 @@ pub fn instantiate(
         attr("sender", sender.as_str()),
     ];
 
-    Cw721MetadataContract::default().instantiate(deps.branch(), env, info, init_msg)?;
+    let cw721_contract: Cw721MetadataContract = Cw721MetadataContract::default();
+    cw721_contract.instantiate(deps, env, info, init_msg)?;
 
     Ok(Response::new().add_attributes(attrs))
 }

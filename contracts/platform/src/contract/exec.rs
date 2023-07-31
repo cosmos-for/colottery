@@ -25,10 +25,11 @@ pub fn execute(
     match msg {
         CreateLottery {
             name,
-            symobl,
+            symbol: symobl,
             unit_price_amount,
             unit_price_denom,
             period,
+            expiration,
             selection,
             max_players,
             label,
@@ -41,6 +42,7 @@ pub fn execute(
             unit_price_amount,
             &unit_price_denom,
             &period,
+            expiration,
             selection,
             max_players,
             &label,
@@ -60,6 +62,7 @@ pub fn create_lottery(
     unit_price_amount: u128,
     unit_price_denom: &str,
     period: &str,
+    expiration: u64,
     selection: WinnerSelection,
     max_players: u64,
     label: &str,
@@ -73,6 +76,7 @@ pub fn create_lottery(
         unit_price_amount,
         unit_price_denom,
         period,
+        expiration,
         selection.clone(),
         max_players,
     );

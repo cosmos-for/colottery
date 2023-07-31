@@ -1,8 +1,8 @@
 use std::str::FromStr;
 
-use common::helper::{
-    get_last_day_month, get_last_day_week, get_last_day_year, get_secs_of_hour_22, timestamp_to_utc,
-};
+// use common::helper::{
+//     get_last_day_month, get_last_day_week, get_last_day_year, get_secs_of_hour_22, timestamp_to_utc,
+// };
 
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Coin, Timestamp};
@@ -121,28 +121,28 @@ impl LotteryPeriod {
 
     // Only support: Hour, Day
     // Other coming soon
-    pub fn get_deadline(&self, created_at: Timestamp) -> Timestamp {
-        // match self {
-        //     Self::Hour {} => created_at.plus_hours(1),
-        //     Self::Day {} => created_at.plus_days(1),
-        //     _ => created_at.plus_days(1),
-        // }
-        match self {
-            Self::Hour {} => created_at.plus_hours(1),
-            Self::Day {} => Timestamp::from_seconds(get_secs_of_hour_22(
-                timestamp_to_utc(created_at).date_naive(),
-            )),
-            Self::Week {} => Timestamp::from_seconds(get_secs_of_hour_22(get_last_day_week(
-                timestamp_to_utc(created_at),
-            ))),
-            Self::Month {} => Timestamp::from_seconds(get_secs_of_hour_22(get_last_day_month(
-                timestamp_to_utc(created_at),
-            ))),
-            Self::Year {} => Timestamp::from_seconds(get_secs_of_hour_22(get_last_day_year(
-                timestamp_to_utc(created_at),
-            ))),
-        }
-    }
+    // pub fn get_deadline(&self, created_at: Timestamp) -> Timestamp {
+    //     match self {
+    //         Self::Hour {} => created_at.plus_hours(1),
+    //         Self::Day {} => created_at.plus_days(1),
+    //         _ => created_at.plus_days(1),
+    //     }
+    // match self {
+    //     Self::Hour {} => created_at.plus_hours(1),
+    //     Self::Day {} => Timestamp::from_seconds(get_secs_of_hour_22(
+    //         timestamp_to_utc(created_at).date_naive(),
+    //     )),
+    //     Self::Week {} => Timestamp::from_seconds(get_secs_of_hour_22(get_last_day_week(
+    //         timestamp_to_utc(created_at),
+    //     ))),
+    //     Self::Month {} => Timestamp::from_seconds(get_secs_of_hour_22(get_last_day_month(
+    //         timestamp_to_utc(created_at),
+    //     ))),
+    //     Self::Year {} => Timestamp::from_seconds(get_secs_of_hour_22(get_last_day_year(
+    //         timestamp_to_utc(created_at),
+    //     ))),
+    // }
+    // }
 }
 
 // see: https://docs.opensea.io/docs/metadata-standards
@@ -186,7 +186,6 @@ pub const IDX_2_ADDR: Map<u64, Addr> = Map::new("idx_2_addr");
 
 #[cfg(test)]
 mod tests {
-    use chrono::Utc;
 
     use super::*;
 
@@ -217,44 +216,5 @@ mod tests {
         let period_y = year.parse().unwrap();
         assert_eq!(LotteryPeriod::Year {}, period_y);
         assert!(period_y.is_year());
-    }
-
-    #[test]
-    fn get_deadline_should_works() {
-        // let day = LotteryPeriod::Day {};
-        // let utc_now = Utc::now().timestamp() as u64;
-        // println!("utc now is: {:?}", utc_now);
-        // let now = Timestamp::from_seconds(utc_now);
-
-        // let deadline = day.get_deadline(now);
-        // println!("deadline is: {:?}", deadline.seconds());
-        // assert_eq!(deadline.seconds(), now.plus_days(1).seconds());
-
-        let day = LotteryPeriod::Day {};
-        let utc_now = Utc::now();
-        println!("utc now is: {:?}", utc_now.timestamp());
-
-        let utc_22 = utc_now.date_naive().and_hms_opt(22, 0, 0);
-        let now_secs = utc_22.map(|t| t.timestamp()).unwrap() as u64;
-        println!("utc sces is: {:?}", now_secs);
-
-        let now = Timestamp::from_seconds(now_secs);
-
-        println!("bft now seconds: {}", now.seconds());
-
-        assert_eq!(now_secs, now.seconds());
-
-        let deadline = day.get_deadline(now);
-        println!("deadline is: {:?}", deadline.seconds());
-        assert_eq!(deadline.seconds(), now.seconds());
-
-        let hour = LotteryPeriod::Hour {};
-        let utc_now = Utc::now().timestamp() as u64;
-        println!("utc now is: {:?}", utc_now);
-        let now = Timestamp::from_seconds(utc_now);
-
-        let deadline = hour.get_deadline(now);
-        println!("deadline is: {:?}", deadline.seconds());
-        assert_eq!(deadline.seconds(), now.plus_hours(1).seconds());
     }
 }

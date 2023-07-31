@@ -1,5 +1,6 @@
-use common::hash::{self, hash_to_u64};
-use cosmwasm_std::{attr, coins, Addr, BankMsg, DepsMut, Env, MessageInfo, Response, Storage};
+use cosmwasm_std::{
+    attr, coins, to_binary, Addr, BankMsg, DepsMut, Env, MessageInfo, Response, Storage, WasmMsg,
+};
 
 use cw_storage_plus::Map;
 
@@ -7,44 +8,45 @@ use crate::{
     auth::exec::{
         validate_balance, validate_buy, validate_double_buy, validate_draw, validate_owner,
     },
+    hash,
     msg::ExecuteMsg,
     state::{
         GameStatus, PlayerInfo, State, WinnerInfo, IDX_2_ADDR, OWNER, PLAYERS, PLAYER_COUNTER,
         STATE,
     },
-    ContractError, ARCH_DEMON,
+    ContractError, Cw721MetadataContract, Extension,
 };
 
-// type Cw721BaseContract<'a> = Cw721Contract<'a, Extension, Empty, Empty, Empty>;
+pub trait BaseExecute {
+    fn base_execute(
+        &self,
+        deps: DepsMut,
+        env: Env,
+        info: MessageInfo,
+        msg: ExecuteMsg,
+    ) -> Result<Response, ContractError>;
+}
 
-// pub trait BaseExecute {
-//     fn base_execute(
-//         &self,
-//         deps: DepsMut,
-//         env: Env,
-//         info: MessageInfo,
-//         msg: ExecuteMsg,
-//     ) -> Result<Response, ContractError>;
-// }
+impl<'a> BaseExecute for Cw721MetadataContract<'a> {
+    fn base_execute(
+        &self,
+        deps: DepsMut,
+        env: Env,
+        info: MessageInfo,
+        msg: ExecuteMsg,
+    ) -> Result<Response, ContractError> {
+        let cw721_msg = msg.try_into()?;
 
-// impl<'a> BaseExecute for Cw721BaseContract<'a> {
-//     fn base_execute(
-//         &self,
-//         deps: DepsMut,
-//         env: Env,
-//         info: MessageInfo,
-//         msg: ExecuteMsg,
-//     ) -> Result<Response, ContractError> {
-//         let cw721_msg = msg.try_into()?;
+        // println!("executing msg {:?} in base execute", cw721_msg);
+        let execute_resp = self.execute(deps, env, info, cw721_msg);
+        // println!("executed msg response {:?} in base execute", execute_resp);
 
-//         let execute_res = self.execute(deps, env, info, cw721_msg);
-
-//         match execute_res {
-//             Ok(res) => Ok(res),
-//             Err(err) => Err(ContractError::try_from(err)?),
-//         }
-//     }
-// }
+        match execute_resp {
+            Ok(res) => Ok(res),
+            Err(err) => Err(ContractError::try_from(err)?),
+        }
+    }
+}
 
 pub fn execute(
     deps: DepsMut,
@@ -53,6 +55,8 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     use ExecuteMsg::*;
+
+    let contract = Cw721MetadataContract::default();
 
     match msg {
         BuyTicket { denom, memo } => buy_ticket(deps, &env, &info, &denom, memo),
@@ -64,6 +68,7 @@ pub fn execute(
             recipient,
         } => withdraw(deps, &env, &info, amount, denom.as_str(), recipient),
         Transfer { recipient } => transfer(deps, &env, &info, recipient),
+        _ => contract.base_execute(deps, env, info, msg),
     }
 }
 
@@ -85,13 +90,17 @@ pub fn buy_ticket(
 
     update_state_with_buy(deps, env, &mut state, sender, memo)?;
 
+    // mint nft
+    let token_id = &state.player_count.to_string();
+    let resp = mint_nft(env, token_id, sender, None, Default::default())?;
+
     let attributes = vec![
         attr("action", "buy_ticket"),
         attr("sender", sender.as_str()),
         attr("denom", denom),
     ];
 
-    Ok(Response::new().add_attributes(attributes))
+    Ok(resp.add_attributes(attributes))
 }
 
 pub fn draw_lottery(
@@ -114,7 +123,7 @@ pub fn draw_lottery(
     // Change status to `Closed`
     state.status = GameStatus::Closed;
 
-    state.seed = hash::seed::finalize(&state.seed, sender, env.block.height, &transaction);
+    state.seed = hash::finalize(&state.seed, sender, env.block.height, &transaction);
 
     let winner = choose_winner_infos(deps.storage, PLAYERS, IDX_2_ADDR, &state, player_counter)?;
 
@@ -123,7 +132,7 @@ pub fn draw_lottery(
     } else {
         let balances = deps
             .querier
-            .query_balance(&env.contract.address, ARCH_DEMON)?;
+            .query_balance(&env.contract.address, &state.unit_price.denom)?;
         let winner_info = WinnerInfo {
             address: winner.first().as_ref().unwrap().player_addr.clone(),
             prize: vec![balances],
@@ -243,7 +252,7 @@ pub fn choose_winner_infos(
         Ok(winner.into_iter().map(|(_, player)| player).collect())
     } else {
         let seed = state.seed.as_str();
-        let seed_num = hash_to_u64(seed);
+        let seed_num = hash::hash_to_u64(seed);
 
         println!("The seed num is {:?}", seed_num);
 
@@ -268,7 +277,7 @@ fn update_state_with_buy(
 
     let player_counter = PLAYER_COUNTER.load(deps.storage)? + 1;
 
-    state.seed = hash::seed::update(&state.seed, sender, player_counter, current_height, &memo);
+    state.seed = hash::update(&state.seed, sender, player_counter, current_height, &memo);
 
     state.player_count += 1;
 
@@ -291,4 +300,33 @@ fn update_state_with_buy(
     IDX_2_ADDR.save(deps.storage, player_counter, sender)?;
 
     Ok(())
+}
+
+pub fn mint_nft(
+    env: &Env,
+    token_id: &str,
+    sender: &Addr,
+    token_uri: Option<String>,
+    extension: Extension,
+) -> Result<Response, ContractError> {
+    let mint_msg = ExecuteMsg::Mint {
+        token_id: token_id.to_owned(),
+        owner: sender.to_string(),
+        token_uri,
+        extension,
+    };
+
+    let msg = WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&mint_msg)?,
+        funds: vec![],
+    };
+
+    let attrs = vec![
+        attr("action", "mint_nft"),
+        attr("reciever", sender.as_str()),
+        attr("token_id", token_id),
+    ];
+
+    Ok(Response::new().add_attributes(attrs).add_message(msg))
 }

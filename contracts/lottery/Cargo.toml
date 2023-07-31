@@ -30,6 +30,7 @@ optimize = """docker run --rm -v "$(pwd)":/code \
 """
 
 [dependencies]
+base64ct = { workspace = true }
 chrono = { workspace = true }
 cosmwasm-schema = { workspace = true }
 cosmwasm-std = { workspace = true }
@@ -39,16 +40,18 @@ cw-utils = { workspace = true }
 cw2 = { workspace = true }
 cw20-base = { workspace = true }
 cw20 = { workspace = true }
-cw721-base = { workspace = true }
+cw721 = { workspace = true }
+cw721-base = { workspace = true, features = ["library"] }
 cw-controllers = { workspace = true }
 hex-literal = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true }
+sha2 = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true, optional = true }
 cw-multi-test = { workspace = true, optional = true }
 
-common = { path = "../../packages/common", version = "1.0.0" }
+# common = { path = "../../packages/common", version = "1.0.0" }
 
 [dev-dependencies]
 anyhow = { workspace = true }

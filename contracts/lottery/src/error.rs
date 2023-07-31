@@ -2,7 +2,7 @@ use cosmwasm_std::{Addr, Coin, StdError, Uint128};
 use cw_utils::PaymentError;
 use thiserror::Error;
 
-use crate::state::WinnerSelection;
+use crate::{msg::QueryMsg, state::WinnerSelection};
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
@@ -57,6 +57,12 @@ pub enum ContractError {
     #[error("The lottery is activing, can't draw")]
     LotteryIsActiving {},
 
+    #[error("The expiration: {expiration_secs} in instantiate message is not valid, must greater than {created_at}")]
+    InstantiateExpirationInvalid {
+        expiration_secs: u64,
+        created_at: u64,
+    },
+
     #[error("error(0)")]
     PaymentError(#[from] PaymentError),
 
@@ -105,6 +111,9 @@ pub enum ContractError {
 
     #[error("Approval not found for: {spender}")]
     ApprovalNotFound { spender: String },
+
+    #[error("Unsupported query message: {:?}", msg)]
+    QueryMsgNotSupported { msg: QueryMsg },
 }
 
 impl From<cw20_base::ContractError> for ContractError {

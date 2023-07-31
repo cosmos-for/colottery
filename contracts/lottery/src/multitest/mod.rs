@@ -12,6 +12,9 @@ use crate::{
     state::WinnerSelection,
 };
 
+pub const ARCH_DEMON: &str = "aconst";
+pub const ARCH_DECIMALS: u8 = 18;
+
 #[derive(Clone, Debug, Copy)]
 pub struct LotteryCodeId(u64);
 
@@ -32,6 +35,7 @@ impl LotteryCodeId {
         unit_price_amount: u128,
         unit_price_denom: &str,
         period: &str,
+        expiration: u64,
         selection: WinnerSelection,
         max_players: u64,
         label: &str,
@@ -45,6 +49,7 @@ impl LotteryCodeId {
             unit_price_amount,
             unit_price_denom,
             period,
+            expiration,
             selection,
             max_players,
             label,
@@ -78,6 +83,7 @@ impl LotteryContract {
         unit_price_amount: u128,
         unit_price_denom: &str,
         period: &str,
+        expiration: u64,
         selection: WinnerSelection,
         max_players: u64,
         label: &str,
@@ -88,6 +94,7 @@ impl LotteryContract {
             unit_price_amount,
             unit_price_denom,
             period,
+            expiration,
             selection,
             max_players,
         );

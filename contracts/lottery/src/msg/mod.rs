@@ -15,17 +15,20 @@ pub struct InstantiateMsg {
     pub unit_price_amount: u128,
     pub unit_price_denom: String,
     pub period: String,
+    pub expiration: u64,
     pub selection: WinnerSelection,
     pub max_players: u64,
 }
 
 impl InstantiateMsg {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         name: impl Into<String>,
         symobl: impl Into<String>,
         unit_price_amount: u128,
         unit_price_denom: impl Into<String>,
         period: impl Into<String>,
+        expiration: u64,
         selection: WinnerSelection,
         max_players: u64,
     ) -> Self {
@@ -36,6 +39,7 @@ impl InstantiateMsg {
             unit_price_denom: unit_price_denom.into(),
             period: period.into(),
             selection,
+            expiration,
             max_players,
         }
     }

@@ -774,8 +774,8 @@ name = "lottery"
 version = "1.0.0"
 dependencies = [
  "anyhow",
+ "base64ct",
  "chrono",
- "common",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",
@@ -786,10 +786,12 @@ dependencies = [
  "cw2 1.1.0",
  "cw20",
  "cw20-base",
+ "cw721 0.18.0",
  "cw721-base 0.18.0",
  "hex-literal",
  "schemars",
  "serde",
+ "sha2 0.10.7",
  "thiserror",
 ]
 
