@@ -39,7 +39,8 @@ cw-utils = { workspace = true }
 cw2 = { workspace = true }
 cw20-base = { workspace = true }
 cw20 = { workspace = true }
-cw721-base = { workspace = true }
+cw721 = { workspace = true }
+cw721-base = { workspace = true, features = ["library"] }
 cw-controllers = { workspace = true }
 hex-literal = { workspace = true }
 schemars = { workspace = true }

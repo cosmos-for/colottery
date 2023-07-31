@@ -1,5 +1,7 @@
 use common::hash::{self, hash_to_u64};
-use cosmwasm_std::{attr, coins, Addr, BankMsg, DepsMut, Env, MessageInfo, Response, Storage};
+use cosmwasm_std::{
+    attr, coins, to_binary, Addr, BankMsg, DepsMut, Env, MessageInfo, Response, Storage, WasmMsg,
+};
 
 use cw_storage_plus::Map;
 
@@ -12,7 +14,7 @@ use crate::{
         GameStatus, PlayerInfo, State, WinnerInfo, IDX_2_ADDR, OWNER, PLAYERS, PLAYER_COUNTER,
         STATE,
     },
-    ContractError, Cw721MetadataContract,
+    ContractError, Cw721MetadataContract, Extension,
 };
 
 pub trait BaseExecute {
@@ -35,9 +37,11 @@ impl<'a> BaseExecute for Cw721MetadataContract<'a> {
     ) -> Result<Response, ContractError> {
         let cw721_msg = msg.try_into()?;
 
-        let execute_res = self.execute(deps, env, info, cw721_msg);
+        // println!("executing msg {:?} in base execute", cw721_msg);
+        let execute_resp = self.execute(deps, env, info, cw721_msg);
+        // println!("executed msg response {:?} in base execute", execute_resp);
 
-        match execute_res {
+        match execute_resp {
             Ok(res) => Ok(res),
             Err(err) => Err(ContractError::try_from(err)?),
         }
@@ -86,13 +90,17 @@ pub fn buy_ticket(
 
     update_state_with_buy(deps, env, &mut state, sender, memo)?;
 
+    // mint nft
+    let token_id = &state.player_count.to_string();
+    let resp = mint_nft(env, token_id, sender, None, Default::default())?;
+
     let attributes = vec![
         attr("action", "buy_ticket"),
         attr("sender", sender.as_str()),
         attr("denom", denom),
     ];
 
-    Ok(Response::new().add_attributes(attributes))
+    Ok(resp.add_attributes(attributes))
 }
 
 pub fn draw_lottery(
@@ -292,4 +300,33 @@ fn update_state_with_buy(
     IDX_2_ADDR.save(deps.storage, player_counter, sender)?;
 
     Ok(())
+}
+
+pub fn mint_nft(
+    env: &Env,
+    token_id: &str,
+    sender: &Addr,
+    token_uri: Option<String>,
+    extension: Extension,
+) -> Result<Response, ContractError> {
+    let mint_msg = ExecuteMsg::Mint {
+        token_id: token_id.to_owned(),
+        owner: sender.to_string(),
+        token_uri,
+        extension,
+    };
+
+    let msg = WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&mint_msg)?,
+        funds: vec![],
+    };
+
+    let attrs = vec![
+        attr("action", "mint_nft"),
+        attr("reciever", sender.as_str()),
+        attr("token_id", token_id),
+    ];
+
+    Ok(Response::new().add_attributes(attrs).add_message(msg))
 }

@@ -1,5 +1,7 @@
 use cosmwasm_std::{to_binary, Binary, Deps, Env, StdResult};
 
+use cw721_base::entry::query as cw721_query;
+
 use crate::{
     msg::{CurrentStateResp, OwnerResp, PlayInfoResp, QueryMsg, WinnerResp},
     state::{OWNER, PLAYERS, STATE},
@@ -12,6 +14,11 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::CurrentState {} => current_state(deps),
         QueryMsg::Balances {} => balances(deps, &env),
         QueryMsg::PlayInfo { address } => play_info(deps, &address),
+
+        _ => {
+            let query_msg = msg.into();
+            cw721_query(deps, env, query_msg)
+        }
     }
 }
 

@@ -60,7 +60,7 @@ pub fn instantiate(
     let init_msg = Cw721InstantiateMsg {
         name: msg.name,
         symbol: msg.symobl,
-        minter: info.sender.to_string(),
+        minter: env.contract.address.to_string(),
     };
 
     let attrs = vec![

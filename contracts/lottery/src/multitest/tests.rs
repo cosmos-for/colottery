@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod test {
-    use cosmwasm_std::{coin, coins};
+    use std::marker::PhantomData;
+
+    use cosmwasm_std::{coin, coins, Empty};
     use cw_multi_test::App;
 
     use crate::{
@@ -8,6 +10,10 @@ mod test {
         state::{GameStatus, WinnerSelection},
         ContractError,
     };
+
+    use cw721_base::helpers::Cw721Contract;
+
+    // use cw721_base::multi_tests;
 
     #[test]
     fn instantiate_should_works() {
@@ -95,6 +101,9 @@ mod test {
             )
             .unwrap();
 
+        let cw721_contract: Cw721Contract<Empty, Empty> =
+            Cw721Contract(contract.addr(), PhantomData, PhantomData);
+
         // Buy ticket
         contract
             .buy_ticket(
@@ -115,6 +124,12 @@ mod test {
                 &coins(100, ARCH_DEMON),
             )
             .unwrap();
+
+        let nft_resp = cw721_contract.owner_of(&app.wrap(), "1", true).unwrap();
+        assert_eq!(nft_resp.owner, alice());
+
+        let nft_resp = cw721_contract.owner_of(&app.wrap(), "2", true).unwrap();
+        assert_eq!(nft_resp.owner, bob());
 
         let balances = LotteryContract::query_balances(&app, contract.addr()).unwrap();
         assert_eq!(balances, coins(200, ARCH_DEMON));
