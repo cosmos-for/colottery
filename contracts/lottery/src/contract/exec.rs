@@ -9,7 +9,7 @@ use crate::{
         validate_balance, validate_buy, validate_double_buy, validate_draw, validate_owner,
     },
     hash,
-    msg::ExecuteMsg,
+    msg::{ExecuteMsg, QueryMsg},
     state::{
         GameStatus, PlayerInfo, State, WinnerInfo, IDX_2_ADDR, OWNER, PLAYERS, PLAYER_COUNTER,
         STATE,
@@ -61,7 +61,7 @@ pub fn execute(
     match msg {
         BuyTicket { denom, memo } => buy_ticket(deps, &env, &info, &denom, memo),
         DrawLottery {} => draw_lottery(deps, &env, &info),
-        ClaimLottery {} => claim_lottery(deps, &info),
+        ClaimLottery {} => claim_lottery(deps, &env, &info),
         WithdrawFunds {
             amount,
             denom,
@@ -125,17 +125,19 @@ pub fn draw_lottery(
 
     state.seed = hash::finalize(&state.seed, sender, env.block.height, &transaction);
 
-    let winner = choose_winner_infos(deps.storage, PLAYERS, IDX_2_ADDR, &state, player_counter)?;
+    let winners = choose_winner_infos(deps.storage, PLAYERS, IDX_2_ADDR, &state, player_counter)?;
 
-    if winner.is_empty() {
+    if winners.is_empty() {
         state.winner = vec![];
     } else {
         let balances = deps
             .querier
             .query_balance(&env.contract.address, &state.unit_price.denom)?;
+        let winner_player = winners.first().unwrap();
         let winner_info = WinnerInfo {
-            address: winner.first().as_ref().unwrap().player_addr.clone(),
+            address: winner_player.player_addr.clone(),
             prize: vec![balances],
+            ticket_id: winner_player.ticket_id.clone(),
         };
         state.winner.push(winner_info);
     }
@@ -151,12 +153,27 @@ pub fn draw_lottery(
     Ok(Response::new().add_attributes(attributes))
 }
 
-pub fn claim_lottery(deps: DepsMut, info: &MessageInfo) -> Result<Response, ContractError> {
+pub fn claim_lottery(
+    deps: DepsMut,
+    env: &Env,
+    info: &MessageInfo,
+) -> Result<Response, ContractError> {
     let sender = &info.sender;
     let state = STATE.load(deps.storage)?;
 
+    // check the ticket' owner is sender
+    let ticket_id = state.winner.first().unwrap().ticket_id.clone();
+
+    let ticket: cw721::OwnerOfResponse = deps.querier.query_wasm_smart(
+        env.contract.address.as_str(),
+        &QueryMsg::OwnerOf {
+            token_id: ticket_id,
+            include_expired: Some(true),
+        },
+    )?;
+
     // check lottery is closed and sender is winner
-    if state.is_closed() && state.winner.first().map(|w| &w.address) == Some(sender) {
+    if state.is_closed() && ticket.owner == *sender {
         OWNER.save(deps.storage, sender)?;
 
         let attributes = vec![
@@ -291,6 +308,7 @@ fn update_state_with_buy(
             lottery_addr: lottery_addr.to_owned(),
             height: current_height,
             buy_at: current_height,
+            ticket_id: player_counter.to_string(),
             memo,
         },
     )?;

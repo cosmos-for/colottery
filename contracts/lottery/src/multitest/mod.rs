@@ -161,6 +161,25 @@ impl LotteryContract {
         )
     }
 
+    #[track_caller]
+    pub fn transfer_ticket(
+        &self,
+        app: &mut App,
+        sender: Addr,
+        recipient: String,
+        token_id: String,
+    ) -> AnyResult<AppResponse> {
+        app.execute_contract(
+            sender,
+            self.addr(),
+            &ExecuteMsg::TransferNft {
+                recipient,
+                token_id,
+            },
+            &[],
+        )
+    }
+
     pub fn winner(&self, app: &App) -> StdResult<WinnerResp> {
         app.wrap()
             .query_wasm_smart(self.addr(), &QueryMsg::Winner {})

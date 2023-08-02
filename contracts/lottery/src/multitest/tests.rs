@@ -7,7 +7,7 @@ mod test {
     use cw_multi_test::App;
 
     use crate::{
-        multitest::{alice, bob, owner, LotteryCodeId, LotteryContract, ARCH_DEMON},
+        multitest::{alice, bob, owner, parent, LotteryCodeId, LotteryContract, ARCH_DEMON},
         state::{GameStatus, WinnerSelection},
         ContractError,
     };
@@ -154,13 +154,24 @@ mod test {
         assert_eq!(resp.player_addr, alice());
         assert_eq!(resp.memo, Some("恭喜发财!".to_string()));
 
+        // transfer ticket
+        contract
+            .transfer_ticket(&mut app, alice(), parent().to_string(), "1".to_string())
+            .unwrap();
+
         // draw lottery
         contract.draw_lottery(&mut app, owner()).unwrap();
 
-        contract.claim_lottery(&mut app, alice()).unwrap();
+        let claim_err = contract.claim_lottery(&mut app, alice()).unwrap_err();
+        assert_eq!(
+            ContractError::Unauthorized {},
+            claim_err.downcast().unwrap()
+        );
+
+        contract.claim_lottery(&mut app, parent()).unwrap();
 
         let owner = contract.owner(&app).unwrap();
-        assert_eq!(owner.owner, alice());
+        assert_eq!(owner.owner, parent());
 
         let state = contract.query_state(&app).unwrap();
         assert_eq!(state.state.player_count, 2);
@@ -172,20 +183,23 @@ mod test {
 
         // withdraw funds
         contract
-            .withdraw(&mut app, alice(), 100, ARCH_DEMON, None)
+            .withdraw(&mut app, parent(), 100, ARCH_DEMON, None)
             .unwrap();
         contract
-            .withdraw(&mut app, alice(), 100, ARCH_DEMON, Some(bob().to_string()))
+            .withdraw(&mut app, parent(), 100, ARCH_DEMON, Some(bob().to_string()))
             .unwrap();
 
         let balances = LotteryContract::query_balances(&app, contract.addr()).unwrap();
         assert!(balances.is_empty());
 
         let alice_balances = LotteryContract::query_balances(&app, alice()).unwrap();
-        assert_eq!(alice_balances, coins(300, ARCH_DEMON));
+        assert_eq!(alice_balances, coins(200, ARCH_DEMON));
 
         let bob_balances = LotteryContract::query_balances(&app, bob()).unwrap();
         assert_eq!(bob_balances, coins(500, ARCH_DEMON));
+
+        let parent_balances = LotteryContract::query_balances(&app, parent()).unwrap();
+        assert_eq!(parent_balances, coins(100, ARCH_DEMON));
     }
 
     #[test]
