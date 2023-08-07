@@ -87,6 +87,9 @@ pub enum ContractError {
     #[error("Invalid expiration")]
     InvalidExpiration {},
 
+    #[error("{value} is not a valid  category")]
+    IvalidCategory { value: String },
+
     #[error("Allowance is expired")]
     Expired {},
 

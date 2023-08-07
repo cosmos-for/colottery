@@ -41,6 +41,7 @@ mod test {
                 expiration,
                 selection,
                 max_players,
+                None,
                 label,
             )
             .unwrap();
@@ -102,6 +103,7 @@ mod test {
                 expiration,
                 selection,
                 max_players,
+                None,
                 label,
             )
             .unwrap();
@@ -237,6 +239,7 @@ mod test {
                 expiration,
                 selection,
                 max_players,
+                None,
                 label,
             )
             .unwrap();

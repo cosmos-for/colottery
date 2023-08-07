@@ -38,6 +38,7 @@ impl LotteryCodeId {
         expiration: u64,
         selection: WinnerSelection,
         max_players: u64,
+        category: Option<String>,
         label: &str,
     ) -> AnyResult<LotteryContract> {
         LotteryContract::instantiate(
@@ -52,6 +53,7 @@ impl LotteryCodeId {
             expiration,
             selection,
             max_players,
+            category,
             label,
         )
     }
@@ -86,6 +88,7 @@ impl LotteryContract {
         expiration: u64,
         selection: WinnerSelection,
         max_players: u64,
+        category: Option<String>,
         label: &str,
     ) -> AnyResult<Self> {
         let init_msg = InstantiateMsg::new(
@@ -97,6 +100,7 @@ impl LotteryContract {
             expiration,
             selection,
             max_players,
+            category,
         );
 
         app.instantiate_contract(
