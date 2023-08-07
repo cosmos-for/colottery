@@ -72,6 +72,7 @@ mod test {
                 expiration,
                 selection,
                 max_players,
+                None,
                 label,
             )
             .unwrap();
@@ -142,6 +143,7 @@ mod test {
                 expiration,
                 selection,
                 max_players,
+                None,
                 label,
             )
             .unwrap();
@@ -167,7 +169,7 @@ mod test {
                 &mut app,
                 bob(),
                 ARCH_DEMON,
-                Some("我要发达!".to_string()),
+                Some("我要发".to_string()),
                 &coins(100, ARCH_DEMON),
             )
             .unwrap();
@@ -277,6 +279,7 @@ mod test {
             expiration,
             selection,
             max_players,
+            None,
             label,
         );
 

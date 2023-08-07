@@ -87,6 +87,7 @@ impl PlatformContract {
         expiration: u64,
         selection: WinnerSelection,
         max_players: u64,
+        category: Option<String>,
         label: &str,
     ) -> AnyResult<Option<InstantiationData>> {
         let msg = ExecuteMsg::CreateLottery {
@@ -98,6 +99,7 @@ impl PlatformContract {
             expiration,
             selection,
             max_players,
+            category,
             label: label.into(),
         };
 

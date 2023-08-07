@@ -21,6 +21,7 @@ pub struct State {
     pub status: GameStatus,
     pub seed: String,
     pub winner: Vec<WinnerInfo>,
+    pub category: LotteryCategory,
     pub extension: Extension,
 }
 
@@ -47,6 +48,7 @@ impl WinnerSelection {
         matches!(self, Self::Jackpot {})
     }
 }
+
 #[cw_serde]
 pub enum GameStatus {
     Activing,
@@ -54,10 +56,29 @@ pub enum GameStatus {
 }
 
 #[cw_serde]
-pub struct Trait {
-    pub display_type: Option<String>,
-    pub trait_type: String,
-    pub value: String,
+pub enum LotteryCategory {
+    Normal {},
+    SpecifyPrize {},
+}
+
+impl Default for LotteryCategory {
+    fn default() -> Self {
+        Self::Normal {}
+    }
+}
+
+impl FromStr for LotteryCategory {
+    type Err = ContractError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let ls = s.trim().to_lowercase();
+
+        match ls.as_str() {
+            "normal" => Ok(Self::Normal {}),
+            "specify_prize" => Ok(Self::SpecifyPrize {}),
+            _ => Err(ContractError::IvalidCategory { value: s.into() }),
+        }
+    }
 }
 
 #[cw_serde]
@@ -79,9 +100,9 @@ impl FromStr for LotteryPeriod {
     type Err = ContractError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let ls = s.to_lowercase();
-        let ls = ls.as_str();
-        let period = match ls {
+        let ls = s.trim().to_lowercase();
+
+        let period = match ls.as_str() {
             "hour" => Self::Hour {},
             "day" => Self::Day {},
             "week" => Self::Week {},
@@ -116,21 +137,6 @@ impl LotteryPeriod {
     }
 }
 
-// see: https://docs.opensea.io/docs/metadata-standards
-#[cw_serde]
-#[derive(Default)]
-pub struct Metadata {
-    pub image: Option<String>,
-    pub image_data: Option<String>,
-    pub external_url: Option<String>,
-    pub description: Option<String>,
-    pub name: Option<String>,
-    pub attributes: Option<Vec<Trait>>,
-    pub background_color: Option<String>,
-    pub animation_url: Option<String>,
-    pub youtube_url: Option<String>,
-}
-
 #[cw_serde]
 pub struct PlayerInfo {
     pub player_addr: Addr,
@@ -156,6 +162,27 @@ pub const PLAYER_COUNTER: Item<u64> = Item::new("player_counter");
 pub const IDX_2_ADDR: Map<u64, Addr> = Map::new("idx_2_addr");
 
 // pub const CLAIMS: Claims = Claims::new("claims");
+#[cw_serde]
+pub struct Trait {
+    pub display_type: Option<String>,
+    pub trait_type: String,
+    pub value: String,
+}
+
+// see: https://docs.opensea.io/docs/metadata-standards
+#[cw_serde]
+#[derive(Default)]
+pub struct Metadata {
+    pub image: Option<String>,
+    pub image_data: Option<String>,
+    pub external_url: Option<String>,
+    pub description: Option<String>,
+    pub name: Option<String>,
+    pub attributes: Option<Vec<Trait>>,
+    pub background_color: Option<String>,
+    pub animation_url: Option<String>,
+    pub youtube_url: Option<String>,
+}
 
 #[cfg(test)]
 mod tests {

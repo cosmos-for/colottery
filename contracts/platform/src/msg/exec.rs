@@ -14,6 +14,7 @@ pub enum ExecuteMsg {
         expiration: u64,
         selection: WinnerSelection,
         max_players: u64,
+        category: Option<String>,
         label: String,
     },
     DrawLottery {

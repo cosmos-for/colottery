@@ -45,6 +45,11 @@ pub fn instantiate(
     );
 
     let expiration = Timestamp::from_seconds(expiration_secs);
+    let category = msg
+        .category
+        .map(|c| c.parse())
+        .transpose()?
+        .unwrap_or_default();
 
     let config = State {
         name: msg.name.clone(),
@@ -58,6 +63,7 @@ pub fn instantiate(
         player_count: 0,
         max_players: msg.max_players,
         status: GameStatus::Activing,
+        category,
         seed: hash::init(env.contract.address.as_str(), env.block.height),
         winner: vec![],
         extension: Default::default(),

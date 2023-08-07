@@ -21,7 +21,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     use ExecuteMsg::*;
-    // TODO
+
     match msg {
         CreateLottery {
             name,
@@ -32,6 +32,7 @@ pub fn execute(
             expiration,
             selection,
             max_players,
+            category,
             label,
         } => create_lottery(
             deps,
@@ -45,6 +46,7 @@ pub fn execute(
             expiration,
             selection,
             max_players,
+            category,
             &label,
         ),
 
@@ -65,6 +67,7 @@ pub fn create_lottery(
     expiration: u64,
     selection: WinnerSelection,
     max_players: u64,
+    category: Option<String>,
     label: &str,
 ) -> Result<Response, ContractError> {
     let sender = &info.sender;
@@ -79,6 +82,7 @@ pub fn create_lottery(
         expiration,
         selection.clone(),
         max_players,
+        category,
     );
 
     let msg = WasmMsg::Instantiate {

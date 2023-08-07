@@ -18,6 +18,7 @@ pub struct InstantiateMsg {
     pub expiration: u64,
     pub selection: WinnerSelection,
     pub max_players: u64,
+    pub category: Option<String>,
 }
 
 impl InstantiateMsg {
@@ -31,6 +32,7 @@ impl InstantiateMsg {
         expiration: u64,
         selection: WinnerSelection,
         max_players: u64,
+        category: impl Into<Option<String>>,
     ) -> Self {
         Self {
             name: name.into(),
@@ -41,6 +43,7 @@ impl InstantiateMsg {
             selection,
             expiration,
             max_players,
+            category: category.into(),
         }
     }
 }
