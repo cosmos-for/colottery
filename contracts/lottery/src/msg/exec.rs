@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::Binary;
+use cosmwasm_std::{Binary, Coin};
 use cw_utils::Expiration;
 
 use crate::{ContractError, Cw721ExecuteMsg, Extension};
@@ -22,6 +22,10 @@ pub enum ExecuteMsg {
     },
     Transfer {
         recipient: String,
+    },
+    /// 设置预定奖项
+    SetPrizes {
+        prizes: Vec<PreparePrize>,
     },
 
     // NFT msg
@@ -62,6 +66,13 @@ pub enum ExecuteMsg {
     SetMinter {
         minter: String,
     },
+}
+
+#[cw_serde]
+pub struct PreparePrize {
+    pub prize: Coin,
+    pub count: u64,
+    pub level: u64,
 }
 
 impl TryFrom<ExecuteMsg> for Cw721ExecuteMsg {

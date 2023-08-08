@@ -1,10 +1,11 @@
+use std::fmt;
 use std::str::FromStr;
 
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Coin, Timestamp};
 use cw_storage_plus::{Item, Map};
 
-use crate::{ContractError, Extension};
+use crate::{msg::PreparePrize, ContractError, Extension};
 
 #[cw_serde]
 pub struct State {
@@ -76,7 +77,16 @@ impl FromStr for LotteryCategory {
         match ls.as_str() {
             "normal" => Ok(Self::Normal {}),
             "specify_prize" => Ok(Self::SpecifyPrize {}),
-            _ => Err(ContractError::IvalidCategory { value: s.into() }),
+            _ => Err(ContractError::InvalidCategory { value: s.into() }),
+        }
+    }
+}
+
+impl fmt::Display for LotteryCategory {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Normal {} => write!(f, "Normal "),
+            Self::SpecifyPrize {} => write!(f, "SpecifyPrize "),
         }
     }
 }
@@ -160,6 +170,7 @@ pub const STATE: Item<State> = Item::new("state");
 pub const PLAYERS: Map<&Addr, PlayerInfo> = Map::new("players");
 pub const PLAYER_COUNTER: Item<u64> = Item::new("player_counter");
 pub const IDX_2_ADDR: Map<u64, Addr> = Map::new("idx_2_addr");
+pub const PREPARE_PRIZES: Map<u64, PreparePrize> = Map::new("prepare_prizes");
 
 // pub const CLAIMS: Claims = Claims::new("claims");
 #[cw_serde]

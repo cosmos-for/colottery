@@ -3,7 +3,7 @@ use cw_storage_plus::Map;
 use cw_utils::must_pay;
 
 use crate::{
-    state::{PlayerInfo, State, PLAYER_COUNTER},
+    state::{LotteryCategory, PlayerInfo, State, PLAYER_COUNTER},
     ContractError,
 };
 
@@ -45,6 +45,11 @@ pub fn validate_draw(
     validate_timestamp_or_activing(state, env, player_counter)?;
 
     validate_status(state)
+}
+
+pub fn validate_set_prizes(state: &State, owner: &Addr, info: &MessageInfo) -> UnitResult {
+    validate_owner(owner, info)?;
+    validate_prepare_category(state)
 }
 
 pub fn validate_winner_selection(state: &State) -> UnitResult {
@@ -157,6 +162,19 @@ pub fn validate_double_buy(
         player_info.is_none(),
         ContractError::LotteryCanBuyOnce {
             player: sender.clone(),
+        }
+    );
+
+    Ok(())
+}
+
+pub fn validate_prepare_category(state: &State) -> UnitResult {
+    let category = &state.category;
+
+    ensure!(
+        *category == LotteryCategory::SpecifyPrize {},
+        ContractError::InvalidCategory {
+            value: category.to_string(),
         }
     );
 

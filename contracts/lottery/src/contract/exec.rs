@@ -7,12 +7,13 @@ use cw_storage_plus::Map;
 use crate::{
     auth::exec::{
         validate_balance, validate_buy, validate_double_buy, validate_draw, validate_owner,
+        validate_set_prizes,
     },
     hash,
-    msg::{ExecuteMsg, QueryMsg},
+    msg::{ExecuteMsg, PreparePrize, QueryMsg},
     state::{
         GameStatus, PlayerInfo, State, WinnerInfo, IDX_2_ADDR, OWNER, PLAYERS, PLAYER_COUNTER,
-        STATE,
+        PREPARE_PRIZES, STATE,
     },
     ContractError, Cw721MetadataContract, Extension,
 };
@@ -68,6 +69,7 @@ pub fn execute(
             recipient,
         } => withdraw(deps, &env, &info, amount, denom.as_str(), recipient),
         Transfer { recipient } => transfer(deps, &env, &info, recipient),
+        SetPrizes { prizes } => set_prizes(deps, &env, &info, &prizes),
         _ => contract.base_execute(deps, env, info, msg),
     }
 }
@@ -212,6 +214,24 @@ pub fn transfer(
     ];
 
     Ok(Response::new().add_attributes(attributes))
+}
+
+pub fn set_prizes(
+    deps: DepsMut,
+    _env: &Env,
+    info: &MessageInfo,
+    prizes: &[PreparePrize],
+) -> Result<Response, ContractError> {
+    let owner = OWNER.load(deps.storage)?;
+    let state = STATE.load(deps.storage)?;
+
+    validate_set_prizes(&state, &owner, info)?;
+
+    for prize in prizes {
+        PREPARE_PRIZES.save(deps.storage, prize.level, prize)?;
+    }
+
+    Ok(Response::new())
 }
 
 pub fn withdraw(
